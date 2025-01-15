@@ -1,4 +1,4 @@
-project_name: external-dns-hetzner-webhook
+project_name: external-dns-cloudns-webhook
 version: 2
 before:
   hooks:
@@ -34,7 +34,7 @@ archives:
       - goos: windows
         format: zip
 dockers:
-  - id: external-dns-hetzner-webhook-amd64
+  - id: external-dns-cloudns-webhook-amd64
     use: buildx
     image_templates:
       - "{{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:{{ .Tag }}-amd64"
@@ -43,14 +43,14 @@ dockers:
     build_flag_templates:
       - --platform=linux/amd64
       - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description=Hetzner DNS webhook for external-dns
+      - --label=org.opencontainers.image.description=ClouDNS webhook for external-dns
       - --label=org.opencontainers.image.url=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.source=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.version={{ .Version }}
       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
       - --label=org.opencontainers.image.revision={{ .FullCommit }}
       - --label=org.opencontainers.image.licenses=Apache-2.0
-  - id: external-dns-hetzner-webhook-arm64
+  - id: external-dns-cloudns-webhook-arm64
     use: buildx
     image_templates:
       - "{{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:{{ .Tag }}-arm64"
@@ -59,7 +59,7 @@ dockers:
     build_flag_templates:
       - --platform=linux/arm64/v8
       - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description=Hetzner DNS webhook for external-dns
+      - --label=org.opencontainers.image.description=ClouDNS webhook for external-dns
       - --label=org.opencontainers.image.url=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.source=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.version={{ .Version }}

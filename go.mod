@@ -1,4 +1,4 @@
-module external-dns-hetzner-webhook
+module external-dns-cloudns-webhook
 
 go 1.23
 
@@ -28,6 +28,7 @@ require (
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/ghostiam/protogetter v0.3.6 // indirect
+	github.com/go-resty/resty/v2 v2.13.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -49,6 +50,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/otiai10/copy v1.14.0 // indirect
+	github.com/ppmathis/cloudns-go v1.0.1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
@@ -57,6 +59,9 @@ require (
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/src-d/gcfg v1.4.0 // indirect
+	github.com/tidwall/gjson v1.17.1 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.2.1 // indirect
 	go-simpler.org/musttag v0.12.2 // indirect

@@ -19,9 +19,8 @@ package hetzner
 
 import (
 	"context"
-	"time"
-
 	"external-dns-hetzner-webhook/internal/metrics"
+	"time"
 
 	hdns "github.com/jobstoit/hetzner-dns-go/dns"
 )

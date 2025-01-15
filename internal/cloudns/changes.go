@@ -15,54 +15,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package hetzner
+package cloudns
 
 import (
 	"context"
-	"external-dns-hetzner-webhook/internal/metrics"
 	"time"
 
-	hdns "github.com/jobstoit/hetzner-dns-go/dns"
+	"external-dns-cloudns-webhook/internal/metrics"
+
+	cdns "github.com/ppmathis/cloudns-go"
 	log "github.com/sirupsen/logrus"
 )
 
-// hetznerChange contains all changes to apply to DNS.
-type hetznerChanges struct {
+// cloudnsChange contains all changes to apply to DNS.
+type cloudnsChanges struct {
 	dryRun     bool
 	defaultTTL int
 
-	creates []*hetznerChangeCreate
-	updates []*hetznerChangeUpdate
-	deletes []*hetznerChangeDelete
+	creates []*cloudnsChangeCreate
+	updates []*cloudnsChangeUpdate
+	deletes []*cloudnsChangeDelete
 }
 
 // empty returns true if there are no changes left.
-func (c *hetznerChanges) empty() bool {
+func (c *cloudnsChanges) empty() bool {
 	return len(c.creates) == 0 && len(c.updates) == 0 && len(c.deletes) == 0
 }
 
 // AddChangeCreate adds a new creation entry to the current object.
-func (c *hetznerChanges) AddChangeCreate(zoneID string, options *hdns.RecordCreateOpts) {
+func (c *cloudnsChanges) AddChangeCreate(zoneID string, record *cdns.Record) {
 	changeCreate := &hetznerChangeCreate{
-		ZoneID:  zoneID,
-		Options: options,
+		ZoneID: zoneID,
+		Record: record,
 	}
 	c.creates = append(c.creates, changeCreate)
 }
 
 // AddChangeUpdate adds a new update entry to the current object.
-func (c *hetznerChanges) AddChangeUpdate(zoneID string, record hdns.Record, options *hdns.RecordUpdateOpts) {
-	changeUpdate := &hetznerChangeUpdate{
-		ZoneID:  zoneID,
-		Record:  record,
-		Options: options,
+func (c *cloudnsChanges) AddChangeUpdate(zoneID string, record cdns.Record) {
+	changeUpdate := &cloudnsChangeUpdate{
+		ZoneID: zoneID,
+		Record: record,
 	}
 	c.updates = append(c.updates, changeUpdate)
 }
 
 // AddChangeDelete adds a new delete entry to the current object.
-func (c *hetznerChanges) AddChangeDelete(zoneID string, record hdns.Record) {
-	changeDelete := &hetznerChangeDelete{
+func (c *cloudnsChanges) AddChangeDelete(zoneID string, record cdns.Record) {
+	changeDelete := &cloudnsChangeDelete{
 		ZoneID: zoneID,
 		Record: record,
 	}
@@ -70,7 +70,7 @@ func (c *hetznerChanges) AddChangeDelete(zoneID string, record hdns.Record) {
 }
 
 // applyDeletes processes the records to be deleted.
-func (c hetznerChanges) applyDeletes(ctx context.Context, dnsClient apiClient) error {
+func (c cloudnsChanges) applyDeletes(ctx context.Context, dnsClient *cdns.Client) error {
 	metrics := metrics.GetOpenMetricsInstance()
 	for _, e := range c.deletes {
 		log.WithFields(e.GetLogFields()).Debug("Deleting domain record")
@@ -79,7 +79,7 @@ func (c hetznerChanges) applyDeletes(ctx context.Context, dnsClient apiClient) e
 			continue
 		}
 		start := time.Now()
-		if _, err := dnsClient.DeleteRecord(ctx, &e.Record); err != nil {
+		if _, err := dnsClient.DeleteRecord(ctx, e.Record); err != nil {
 			metrics.IncFailedApiCallsTotal(actDeleteRecord)
 			return err
 		}
@@ -91,22 +91,22 @@ func (c hetznerChanges) applyDeletes(ctx context.Context, dnsClient apiClient) e
 }
 
 // applyCreates processes the records to be created.
-func (c hetznerChanges) applyCreates(ctx context.Context, dnsClient apiClient) error {
+func (c cloudnsChanges) applyCreates(ctx context.Context, dnsClient *cdns.Client) error {
 	metrics := metrics.GetOpenMetricsInstance()
 	for _, e := range c.creates {
-		opt := e.Options
-		if opt.Ttl == nil {
+		rec := e.Record
+		if rec.Ttl == nil {
 			ttl := c.defaultTTL
-			opt.Ttl = &ttl
+			rec.Ttl = &ttl
 		}
 		log.WithFields(e.GetLogFields()).Debug("Creating domain record")
 		log.Infof("Creating record [%s] of type [%s] with value [%s] in zone [%s]",
-			opt.Name, opt.Type, opt.Value, opt.Zone.Name)
+			rec.Name, rec.Type, rec.Value, e.ZoneID)
 		if c.dryRun {
 			continue
 		}
 		start := time.Now()
-		if _, _, err := dnsClient.CreateRecord(ctx, *opt); err != nil {
+		if _, _, err := dnsClient.Records.Create(ctx, e.ZoneID, rec); err != nil {
 			metrics.IncFailedApiCallsTotal(actCreateRecord)
 			return err
 		}
@@ -118,22 +118,22 @@ func (c hetznerChanges) applyCreates(ctx context.Context, dnsClient apiClient) e
 }
 
 // applyUpdates processes the records to be updated.
-func (c hetznerChanges) applyUpdates(ctx context.Context, dnsClient apiClient) error {
+func (c cloudnsChanges) applyUpdates(ctx context.Context, dnsClient *cdns.Client) error {
 	metrics := metrics.GetOpenMetricsInstance()
 	for _, e := range c.updates {
-		opt := e.Options
-		if opt.Ttl == nil {
+		rec := e.Record
+		if rec.Ttl == nil {
 			ttl := c.defaultTTL
-			opt.Ttl = &ttl
+			rec.Ttl = &ttl
 		}
 		log.WithFields(e.GetLogFields()).Debug("Updating domain record")
 		log.Infof("Updating record ID [%s] with name [%s], type [%s], value [%s] and TTL [%d] in zone [%s]",
-			e.Record.ID, opt.Name, opt.Type, opt.Value, *opt.Ttl, opt.Zone.Name)
+			e.Record.ID, rec.Name, rec.Type, rec.Value, rec.Ttl, e.ZoneID)
 		if c.dryRun {
 			continue
 		}
 		start := time.Now()
-		if _, _, err := dnsClient.UpdateRecord(ctx, &e.Record, *opt); err != nil {
+		if _, _, err := dnsClient.Records.Update(ctx, e.ZoneID, rec); err != nil {
 			metrics.IncFailedApiCallsTotal(actUpdateRecord)
 			return err
 		}
@@ -145,7 +145,7 @@ func (c hetznerChanges) applyUpdates(ctx context.Context, dnsClient apiClient) e
 }
 
 // ApplyChanges applies the planned changes using dnsClient.
-func (c hetznerChanges) ApplyChanges(ctx context.Context, dnsClient apiClient) error {
+func (c cloudnsChanges) ApplyChanges(ctx context.Context, dnsClient *cdns.Client) error {
 	// No changes = nothing to do.
 	if c.empty() {
 		log.Debug("No changes to be applied found.")

@@ -1,5 +1,5 @@
 /*
- * Provider - class and functions that handle the connection to Hetzner DNS.
+ * Provider - class and functions that handle the connection to ClouDNS.
  *
  * This file was MODIFIED from the original provider to be used as a standalone
  * webhook server.
@@ -19,25 +19,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package hetzner
+package cloudns
 
 import (
 	"context"
-	"external-dns-hetzner-webhook/internal/metrics"
+
+	"external-dns-cloudns-webhook/internal/metrics"
 
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 	"sigs.k8s.io/external-dns/provider"
 
-	hdns "github.com/jobstoit/hetzner-dns-go/dns"
+	cdns "github.com/ppmathis/cloudns-go"
 	log "github.com/sirupsen/logrus"
 )
 
-// HetznerProvider implements ExternalDNS' provider.Provider interface for
-// Hetzner.
-type HetznerProvider struct {
+// ClouDNSProvider implements ExternalDNS' provider.Provider interface for
+// ClouDNS.
+type ClouDNSProvider struct {
 	provider.BaseProvider
-	client           apiClient
+	client           *cdns.Client
 	batchSize        int
 	debug            bool
 	dryRun           bool
@@ -46,8 +47,8 @@ type HetznerProvider struct {
 	domainFilter     endpoint.DomainFilter
 }
 
-// NewHetznerProvider creates a new HetznerProvider instance.
-func NewHetznerProvider(config *Configuration) (*HetznerProvider, error) {
+// NewClouDNSProvider creates a new ClouDNSProvider instance.
+func NewClouDNSProvider(config *Configuration) (*ClouDNSProvider, error) {
 	var logLevel log.Level
 	if config.Debug {
 		logLevel = log.DebugLevel
@@ -56,8 +57,19 @@ func NewHetznerProvider(config *Configuration) (*HetznerProvider, error) {
 	}
 	log.SetLevel(logLevel)
 
-	return &HetznerProvider{
-		client:       NewHetznerDNS(config.APIKey),
+	var auth cdns.Option
+	if config.Authid {
+		auth = cdns.AuthUserID(config.Authid, config.Authpassword)
+	} else {
+		auth = cdns.AuthSubUserID(config.Authsubid, config.Authpassword)
+	}
+	client, err := cloudns.New(auth)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClouDNSProvider{
+		client:       client,
 		batchSize:    config.BatchSize,
 		debug:        config.Debug,
 		dryRun:       config.DryRun,
@@ -68,9 +80,9 @@ func NewHetznerProvider(config *Configuration) (*HetznerProvider, error) {
 
 // Zones returns the list of the hosted DNS zones.
 // If a domain filter is set, it only returns the zones that match it.
-func (p *HetznerProvider) Zones(ctx context.Context) ([]hdns.Zone, error) {
+func (p *ClouDNSProvider) Zones(ctx context.Context) ([]cdns.Zone, error) {
 	metrics := metrics.GetOpenMetricsInstance()
-	result := []hdns.Zone{}
+	result := []cdns.Zone{}
 
 	zones, err := fetchZones(ctx, p.client, p.batchSize)
 	if err != nil {
@@ -94,7 +106,7 @@ func (p *HetznerProvider) Zones(ctx context.Context) ([]hdns.Zone, error) {
 
 // AdjustEndpoints adjusts the endpoints according to the provider
 // requirements.
-func (p HetznerProvider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
+func (p ClouDNSProvider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
 	adjustedEndpoints := []*endpoint.Endpoint{}
 
 	for _, ep := range endpoints {
@@ -120,7 +132,7 @@ func logDebugEndpoints(endpoints []*endpoint.Endpoint) {
 }
 
 // Records returns the list of records in all zones as a slice of endpoints.
-func (p *HetznerProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
+func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 	zones, err := p.Zones(ctx)
 	if err != nil {
 		return nil, err
@@ -128,7 +140,7 @@ func (p *HetznerProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 
 	endpoints := []*endpoint.Endpoint{}
 	for _, zone := range zones {
-		records, err := fetchRecords(ctx, zone.ID, p.client, p.batchSize)
+		records, err := fetchRecords(ctx, zone, p.client, p.batchSize)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +176,7 @@ func (p *HetznerProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 
 // ensureZoneIDMappingPresent prepares the zoneIDNameMapper, that associates
 // each ZoneID woth the zone name.
-func (p *HetznerProvider) ensureZoneIDMappingPresent(zones []hdns.Zone) {
+func (p *ClouDNSProvider) ensureZoneIDMappingPresent(zones []cdns.Zone) {
 	zoneIDNameMapper := provider.ZoneIDName{}
 	for _, z := range zones {
 		zoneIDNameMapper.Add(z.ID, z.Name)
@@ -174,8 +186,8 @@ func (p *HetznerProvider) ensureZoneIDMappingPresent(zones []hdns.Zone) {
 
 // getRecordsByZoneID returns a map that associates each ZoneID with the
 // records contained in that zone.
-func (p *HetznerProvider) getRecordsByZoneID(ctx context.Context) (map[string][]hdns.Record, error) {
-	recordsByZoneID := map[string][]hdns.Record{}
+func (p *ClouDNSProvider) getRecordsByZoneID(ctx context.Context) (map[string][]cdns.Record, error) {
+	recordsByZoneID := map[string][]cdns.Record{}
 
 	zones, err := p.Zones(ctx)
 	if err != nil {
@@ -184,24 +196,24 @@ func (p *HetznerProvider) getRecordsByZoneID(ctx context.Context) (map[string][]
 
 	// Fetch records for each zone
 	for _, zone := range zones {
-		records, err := fetchRecords(ctx, zone.ID, p.client, p.batchSize)
+		records, err := fetchRecords(ctx, zone, p.client, p.batchSize)
 		if err != nil {
 			return nil, err
 		}
 		// Add full zone information
-		zonedRecords := []hdns.Record{}
+		zonedRecords := []cdns.Record{}
 		for _, r := range records {
 			r.Zone = &zone
 			zonedRecords = append(zonedRecords, r)
 		}
-		recordsByZoneID[zone.ID] = append(recordsByZoneID[zone.ID], zonedRecords...)
+		recordsByZoneID[zone.Domain] = append(recordsByZoneID[zone.Domain], zonedRecords...)
 	}
 
 	return recordsByZoneID, nil
 }
 
 // ApplyChanges applies the given set of generic changes to the provider.
-func (p *HetznerProvider) ApplyChanges(ctx context.Context, planChanges *plan.Changes) error {
+func (p *ClouDNSProvider) ApplyChanges(ctx context.Context, planChanges *plan.Changes) error {
 	if !planChanges.HasChanges() {
 		return nil
 	}
@@ -218,7 +230,7 @@ func (p *HetznerProvider) ApplyChanges(ctx context.Context, planChanges *plan.Ch
 	log.Debug("Preparing deletes")
 	deletesByZoneID := endpointsByZoneID(p.zoneIDNameMapper, planChanges.Delete)
 
-	changes := hetznerChanges{
+	changes := cloudnsChanges{
 		dryRun:     p.dryRun,
 		defaultTTL: p.defaultTTL,
 	}

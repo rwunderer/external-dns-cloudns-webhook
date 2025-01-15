@@ -45,14 +45,14 @@ func GetOpenMetricsInstance() *OpenMetrics {
 			successfulApiCallsTotal: prometheus.NewCounterVec(
 				prometheus.CounterOpts{
 					Name: "successful_api_calls_total",
-					Help: "The number of successful Hetzner API calls",
+					Help: "The number of successful CLouDNS API calls",
 				},
 				[]string{"action"},
 			),
 			failedApiCallsTotal: prometheus.NewCounterVec(
 				prometheus.CounterOpts{
 					Name: "failed_api_calls_total",
-					Help: "The number of Hetzner API calls that returned an error",
+					Help: "The number of CLouDNS API calls that returned an error",
 				},
 				[]string{"action"},
 			),
@@ -70,7 +70,7 @@ func GetOpenMetricsInstance() *OpenMetrics {
 			apiDelayHist: prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{
 					Name:    "api_delay_hist",
-					Help:    "Histogram of the delay in milliseconds when calling the Hetzner API",
+					Help:    "Histogram of the delay in milliseconds when calling the CLouDNS API",
 					Buckets: []float64{10, 100, 250, 500, 1000, 1500, 2000},
 				},
 				[]string{"action"},

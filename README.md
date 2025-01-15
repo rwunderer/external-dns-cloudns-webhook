@@ -1,4 +1,4 @@
-# ExternalDNS - Hetzner Webhook
+# ExternalDNS - ClouDNS Webhook
 
 ⚠️ **This software is experimental.** ⚠️
 
@@ -7,15 +7,11 @@ add-on for automatically DNS records for Kubernetes services using different
 providers. By default, Kubernetes manages DNS records internally, but
 ExternalDNS takes this functionality a step further by delegating the management
 of DNS records to an external DNS provider such as this one. This webhook allows
-you to manage your Hetzner domains inside your kubernetes cluster.
-
-ℹ️ If you are upgrading to 0.7.x from 0.6.x read the
-[Upgrading from previous versions](#upgrading-from-previous-versions) section.
+you to manage your ClouDNS domains inside your kubernetes cluster.
 
 ## Requirements
 
-An
-[API token](https://docs.hetzner.com/dns-console/dns/general/api-access-token/)
+[Auth-id and auth-password](https://www.cloudns.net/wiki/article/42/)
 for the account managing your domains is required for this webhook to work
 properly.
 
@@ -25,19 +21,19 @@ configuration are shown in the next section.
 
 ## Kubernetes Deployment
 
-The Hetzner webhook is provided as a regular Open Container Initiative (OCI)
+The ClouDNS webhook is provided as a regular Open Container Initiative (OCI)
 image released in the
-[GitHub container registry](https://github.com/mconfalonieri/external-dns-hetzner-webhook/pkgs/container/external-dns-hetzner-webhook).
+[GitHub container registry](https://github.com/rwunderer/external-dns-cloudns-webhook/pkgs/container/external-dns-cloudns-webhook).
 The deployment can be performed in every way Kubernetes supports.
 
 Here are provided examples using the
 [External DNS chart](#using-the-externaldns-chart) and the
 [Bitnami chart](#using-the-bitnami-chart).
 
-In either case, a secret that stores the Hetzner API key is required:
+In either case, a secret that stores the CloudDNS auth info is required:
 
 ```yaml
-kubectl create secret generic hetzner-credentials --from-literal=api-key='<EXAMPLE_PLEASE_REPLACE>' -n external-dns
+kubectl create secret generic cloudns-credentials --from-literal=auth-id='<EXAMPLE_PLEASE_REPLACE>' --from-literal=auth-password='<EXAMPLE_PLEASE_REPLACE>' -n external-dns
 ```
 
 ### Using the ExternalDNS chart
@@ -55,7 +51,7 @@ helm repo update
 ```
 
 You can then create the helm values file, for example
-`external-dns-hetzner-values.yaml`:
+`external-dns-cloudns-values.yaml`:
 
 ```yaml
 namespace: external-dns
@@ -64,14 +60,19 @@ provider:
   name: webhook
   webhook:
     image:
-      repository: ghcr.io/mconfalonieri/external-dns-hetzner-webhook
-      tag: v0.7.0
+      repository: ghcr.io/rwunderer/external-dns-cloudns-webhook
+      tag: v0.1.0
     env:
-      - name: HETZNER_API_KEY
+      - name: CLOUDNS_AUTH_ID
         valueFrom:
           secretKeyRef:
-            name: hetzner-credentials
-            key: api-key
+            name: cloudns-credentials
+            key: auth-id
+      - name: CLOUDNS_AUTH_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: cloudns-credentials
+            key: auth-password
     livenessProbe:
       httpGet:
         path: /health
@@ -93,7 +94,7 @@ And then:
 
 ```shell
 # install external-dns with helm
-helm install external-dns-hetzner external-dns/external-dns -f external-dns-hetzner-values.yaml --version 0.15.0 -n external-dns
+helm install external-dns-cloudns external-dns/external-dns -f external-dns-cloudns-values.yaml --version 0.15.0 -n external-dns
 ```
 
 ### Using the Bitnami chart
@@ -111,7 +112,7 @@ helm repo update
 ```
 
 You can then create the helm values file, for example
-`external-dns-hetzner-values.yaml`:
+`external-dns-cloudns-values.yaml`:
 
 ```yaml
 provider: webhook
@@ -121,8 +122,8 @@ extraArgs:
   txt-prefix: "reg-%{record_type}-"
 
 sidecars:
-  - name: hetzner-webhook
-    image: ghcr.io/mconfalonieri/external-dns-hetzner-webhook:v0.7.0
+  - name: cloudns-webhook
+    image: ghcr.io/rwunderer/external-dns-cloudns-webhook:v0.1.0
     ports:
       - containerPort: 8888
         name: webhook
@@ -141,55 +142,41 @@ sidecars:
       initialDelaySeconds: 10
       timeoutSeconds: 5
     env:
-      - name: HETZNER_API_KEY
+      - name: CLOUDNS_AUTH_ID
         valueFrom:
           secretKeyRef:
-            name: hetzner-credentials
-            key: api-key
+            name: cloudns-credentials
+            key: auth-id
+      - name: CLOUDNS_AUTH_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: cloudns-credentials
+            key: auth-password
 ```
 
 And then:
 
 ```shell
 # install external-dns with helm
-helm install external-dns-hetzner bitnami/external-dns -f external-dns-hetzner-values.yaml -n external-dns
+helm install external-dns-cloudns bitnami/external-dns -f external-dns-cloudns-values.yaml -n external-dns
 ```
-
-## Upgrading from previous versions
-
-### 0.6.x to 0.7.x
-
-The configuration for previous versions are still compatible, but consider that
-some warnings will be emitted if `HEALTH_HOST` and `HEALTH_PORT` are set. The
-changes to be aware of are:
-
-- `HEALTH_HOST` is deprecated in favor of `METRICS_HOST`;
-- `HEALTH_PORT` is deprecated in favor of `METRICS_PORT`;
-- the previous health/public socket is now called "metrics socket" in conformity
-  to ExternalDNS terminology, and now supports some additional endpoints:
-  
-  - `/metrics` and
-  - `/healthz`;
-
-  their description can be found in the [Metrics socket](#metrics-socket)
-  section.
-  
 
 
 ## Environment variables
 
 The following environment variables can be used for configuring the application.
 
-### Hetzner DNS API calls configuration
+### ClouDNS API calls configuration
 
 These variables control the behavior of the webhook when interacting with
-Hetzner DNS API.
+ClouDNS API.
 
-| Variable        | Description              | Notes                      |
-| --------------- | -------------------------| -------------------------- |
-| HETZNER_API_KEY | Hetzner API token        | Mandatory                  |
-| BATCH_SIZE      | Number of zones per call | Default: `100`, max: `100` |
-| DEFAULT_TTL     | Default record TTL       | Default: `7200`            |
+| Variable              | Description              | Notes                      |
+| --------------------- | -------------------------| -------------------------- |
+| CLOUDNS_AUTH_ID       | ClouDNS auth-id          | Either AUTH_ID or          |
+| CLOUDNS_AUTH_SUBID    | ClouDNS sub-auth-id      | AUTH_SUBID is required     |
+| CLOUDNS_AUTH_PASSWORD | ClouDNS auth-password    | Mandatory                  |
+| DEFAULT_TTL           | Default record TTL       | Default: `7200`            |
 
 ### Test and debug
 
@@ -198,7 +185,7 @@ These environment variables are useful for testing and debugging purposes.
 | Variable        | Description                      | Notes            |
 | --------------- | -------------------------------- | ---------------- |
 | DRY_RUN         | If set, changes won't be applied | Default: `false` |
-| HETZNER_DEBUG   | Enables debugging messages       | Default: `false` |
+| CLOUDNS_DEBUG   | Enables debugging messages       | Default: `false` |
 
 ### Socket configuration
 
@@ -212,13 +199,6 @@ These variables control the sockets that this application listens to.
 | METRICS_PORT    | Metrics port                     | Default: `8080`      |
 | READ_TIMEOUT    | Sockets' read timeout in ms      | Default: `60000`     |
 | WRITE_TIMEOUT   | Sockets' write timeout in ms     | Default: `60000`     |
-
-Please notice that the following variables were **deprecated**:
-
-| Variable    | Description                      |
-| ----------- | -------------------------------- |
-| HEALTH_HOST | Metrics hostname (deprecated)    |
-| HEALTH_PORT | Metrics port (deprecated)        |
 
 
 ### Domain filtering
@@ -304,7 +284,7 @@ consideration:
 - if your records don't get deleted when applications are uninstalled, you
   might want to verify the policy in use for ExternalDNS: if it's `upsert-only`
   no deletion will occur. It must be set to `sync` for deletions to be
-  processed. Please check that `external-dns-hetzner-values.yaml` include:
+  processed. Please check that `external-dns-cloudns-values.yaml` include:
 
   ```yaml
   policy: sync
@@ -316,19 +296,19 @@ consideration:
 
 ## Exposed metrics
 
-The following metrics related to the API calls towards Hetzner are available
+The following metrics related to the API calls towards ClouDNS are available
 for scraping.
 
 | Name                         | Type      | Labels   | Description                                              |
 | ---------------------------- | --------- | -------- | -------------------------------------------------------- |
-| `successful_api_calls_total` | Counter   | `action` | The number of successful Hetzner API calls               |
-| `failed_api_calls_total`     | Counter   | `action` | The number of Hetzner API calls that returned an error   |
+| `successful_api_calls_total` | Counter   | `action` | The number of successful  API calls                      |
+| `failed_api_calls_total`     | Counter   | `action` | The number of API calls that returned an error           |
 | `filtered_out_zones`         | Gauge     | _none_   | The number of zones excluded by the domain filter        |
 | `skipped_records`            | Gauge     | `zone`   | The number of skipped records per domain                 |
-| `api_delay_hist`             | Histogram | `action` | Histogram of the delay (ms) when calling the Hetzner API |
+| `api_delay_hist`             | Histogram | `action` | Histogram of the delay (ms) when calling the ClouDNS API |
 
 The label `action` can assume one of the following values, depending on the
-Hetzner API endpoint called:
+ClouDNS API endpoint called:
 
 - `get_zones`
 - `get_records`
@@ -350,12 +330,5 @@ available targets.
 
 ## Credits
 
-This Webhook was forked and modified from the [IONOS Webhook](https://github.com/ionos-cloud/external-dns-ionos-webhook)
-to work with Hetzner. It also contains huge parts from [DrBu7cher's Hetzner provider](https://github.com/DrBu7cher/external-dns/tree/readding_hcloud_provider).
-
-### Contributors
-
-| Name                                         | Contribution                  |
-| -------------------------------------------- | ----------------------------- |
-| [DerQue](https://github.com/DerQue)          | local CNAME fix               |
-| [sschaeffner](https://github.com/sschaeffner)| build configuration for arm64 |
+This Webhook was forked and modified from the [Hetzner Webhook](https://github.com/mconfalonieri/external-dns-hetzner-webhook)
+to work with CloudDNS.

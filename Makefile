@@ -7,11 +7,11 @@ ifndef $(GOPATH)
     export GOPATH
 endif
 
-ARTIFACT_NAME = external-dns-hetzner-webhook
+ARTIFACT_NAME = external-dns-cloudns-webhook
 
 
-REGISTRY ?= docker.io/mconfalonieri
-IMAGE_NAME ?= external-dns-hetzner-webhook
+REGISTRY ?= docker.io/rwunderer
+IMAGE_NAME ?= external-dns-cloudns-webhook
 IMAGE_TAG ?= localbuild
 IMAGE = $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 
@@ -71,7 +71,7 @@ build-amd64: ## Build the AMD64 binary
 
 .PHONY: run
 run:build ## Run the binary on local machine
-	build/bin/external-dns-hetzner-webhook
+	build/bin/external-dns-cloudns-webhook
 
 ##@ Docker
 
@@ -131,7 +131,7 @@ unit-test: ## Run unit tests
 
 .PHONY: release-check
 release-check: ## Check if the release will work
-	GITHUB_SERVER_URL=github.com GITHUB_REPOSITORY=mconfalonieri/external-dns-hetzner-webhook REGISTRY=$(REGISTRY) IMAGE_NAME=$(IMAGE_NAME) goreleaser release --snapshot --clean --skip=publish
+	GITHUB_SERVER_URL=github.com GITHUB_REPOSITORY=rwunderer/external-dns-cloudns-webhook REGISTRY=$(REGISTRY) IMAGE_NAME=$(IMAGE_NAME) goreleaser release --snapshot --clean --skip=publish
 
 ##@ License
 

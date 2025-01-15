@@ -19,7 +19,7 @@ import (
 	"net"
 	"net/http"
 
-	"external-dns-hetzner-webhook/internal/metrics"
+	"external-dns-cloudns-webhook/internal/metrics"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
