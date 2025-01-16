@@ -79,15 +79,21 @@ func main() {
 	go metricsSocket.Start(nil, *socketOptions)
 
 	// Read provider configuration
-	providerConfig := cloudns.ClouDNSConfig{}
-	if err := env.Set(providerConfig); err != nil {
+	envConfig := &cloudns.Configuration{}
+	if err := env.Set(envConfig); err != nil {
 		serverStatus.SetHealthy(false)
 		log.Fatal("Provider configuration unreadable - shutting down:", err)
 		log.Exit(1)
 	}
+	providerConfig, err := envConfig.ProviderConfig()
+	if err != nil {
+		serverStatus.SetHealthy(false)
+		log.Fatal("Provider configuration invalid - shutting down:", err)
+		panic(err)
+	}
 
 	// instantiate the ClouDNS provider
-	provider, err := cloudns.NewClouDNSProvider(providerConfig)
+	provider, err := cloudns.NewClouDNSProvider(*providerConfig)
 	if err != nil {
 		serverStatus.SetHealthy(false)
 		log.Fatal("Provider cannot be instantiated - shutting down:", err)

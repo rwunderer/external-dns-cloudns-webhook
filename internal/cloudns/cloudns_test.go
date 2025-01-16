@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/codingconcepts/env"
 	cloudns "github.com/ppmathis/cloudns-go"
 )
 
@@ -205,7 +206,6 @@ var expectedEndpointsOne = []*endpoint.Endpoint{
 func TestNewClouDNSProvider(t *testing.T) {
 	tests := []struct {
 		name             string
-		loginType        string
 		userID           string
 		subUserID        string
 		subUserName      string
@@ -215,83 +215,61 @@ func TestNewClouDNSProvider(t *testing.T) {
 	}{
 		{
 			name:          "valid user-id login type",
-			loginType:     "user-id",
 			userID:        "12345",
 			userPassword:  "password",
 			expectedError: "",
 		},
 		{
 			name:             "invalid user-id login type",
-			loginType:        "user-id",
 			userID:           "invalid",
 			userPassword:     "password",
-			expectedError:    "CLOUDNS_USER_ID is not a valid integer",
+			expectedError:    "error setting \"Authid\": strconv.ParseInt: parsing \"invalid\": invalid syntax",
 			expectedErrorNil: false,
 		},
 		{
 			name:          "valid sub-user login type",
-			loginType:     "sub-user",
 			subUserID:     "12345",
 			userPassword:  "password",
 			expectedError: "",
 		},
 		{
 			name:             "invalid sub-user login type",
-			loginType:        "sub-user",
 			subUserID:        "invalid",
 			userPassword:     "password",
-			expectedError:    "CLOUDNS_SUB_USER_ID is not a valid integer",
+			expectedError:    "error setting \"Authsubid\": strconv.ParseInt: parsing \"invalid\": invalid syntax",
 			expectedErrorNil: false,
 		},
 		{
-			name:          "valid sub-user-name login type",
-			loginType:     "sub-user-name",
-			subUserName:   "user",
-			userPassword:  "password",
-			expectedError: "",
-		},
-		{
-			name:          "invalid login type",
-			loginType:     "invalid",
-			userPassword:  "password",
-			expectedError: "CLOUDNS_LOGIN_TYPE is not valid",
-		},
-		{
 			name:          "missing user password",
-			loginType:     "user-id",
 			userID:        "12345",
-			expectedError: "CLOUDNS_USER_PASSWORD is not set",
+			expectedError: "CLOUDNS_AUTH_PASSWORD environment configuration was missing",
 		},
 		{
-			name:          "missing login type",
+			name:          "missing user id sub-user",
 			userPassword:  "password",
-			expectedError: "CLOUDNS_LOGIN_TYPE is not set",
+			expectedError: "neither CLOUDNS_AUTH_ID nor CLOUDNS_AUTH_SUBID was set",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if test.loginType != "" {
-				os.Setenv("CLOUDNS_LOGIN_TYPE", test.loginType)
-			} else {
-				os.Unsetenv("CLOUDNS_LOGIN_TYPE")
-			}
 			if test.userID != "" {
-				os.Setenv("CLOUDNS_USER_ID", test.userID)
+				os.Setenv("CLOUDNS_AUTH_ID", test.userID)
+			} else {
+				os.Unsetenv("CLOUDNS_AUTH_ID")
 			}
 			if test.subUserID != "" {
-				os.Setenv("CLOUDNS_SUB_USER_ID", test.subUserID)
-			}
-			if test.subUserName != "" {
-				os.Setenv("CLOUDNS_SUB_USER_NAME", test.subUserName)
+				os.Setenv("CLOUDNS_AUTH_SUBID", test.subUserID)
+			} else {
+				os.Unsetenv("CLOUDNS_AUTH_SUBID")
 			}
 			if test.userPassword != "" {
-				os.Setenv("CLOUDNS_USER_PASSWORD", test.userPassword)
+				os.Setenv("CLOUDNS_AUTH_PASSWORD", test.userPassword)
 			} else {
-				os.Unsetenv("CLOUDNS_USER_PASSWORD")
+				os.Unsetenv("CLOUDNS_AUTH_PASSWORD")
 			}
 
-			_, err := NewClouDNSProvider(ClouDNSConfig{})
+			err := makeConfig()
 			if err != nil && test.expectedError == "" {
 				t.Errorf("got unexpected error: %s", err)
 			} else if err == nil && test.expectedError != "" {
@@ -304,6 +282,24 @@ func TestNewClouDNSProvider(t *testing.T) {
 			}
 		})
 	}
+}
+
+func makeConfig() error {
+	envConfig := &Configuration{}
+	if err := env.Set(envConfig); err != nil {
+		return err
+	}
+
+	config, err := envConfig.ProviderConfig()
+	if err != nil {
+		return err
+	}
+
+	if _, err := NewClouDNSProvider(*config); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // func Test_Records(t *testing.T)
