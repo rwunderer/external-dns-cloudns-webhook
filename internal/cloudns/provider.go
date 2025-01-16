@@ -58,12 +58,12 @@ func NewClouDNSProvider(config *Configuration) (*ClouDNSProvider, error) {
 	log.SetLevel(logLevel)
 
 	var auth cdns.Option
-	if config.Authid {
+	if config.Authid != 0 {
 		auth = cdns.AuthUserID(config.Authid, config.Authpassword)
 	} else {
 		auth = cdns.AuthSubUserID(config.Authsubid, config.Authpassword)
 	}
-	client, err := cloudns.New(auth)
+	client, err := cdns.New(auth)
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +148,9 @@ func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 		skippedRecords := 0
 		// Add only endpoints from supported types.
 		for _, r := range records {
-			// Ensure the record has all the required zone information
-			r.Zone = &zone
-			if provider.SupportedRecordType(string(r.Type)) {
+			// TODO: Ensure the record has all the required zone information
+			// r.Zone = &zone
+			if provider.SupportedRecordType(string(r.RecordType)) {
 				ep := createEndpointFromRecord(r)
 				endpoints = append(endpoints, ep)
 			} else {
@@ -179,7 +179,7 @@ func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 func (p *ClouDNSProvider) ensureZoneIDMappingPresent(zones []cdns.Zone) {
 	zoneIDNameMapper := provider.ZoneIDName{}
 	for _, z := range zones {
-		zoneIDNameMapper.Add(z.ID, z.Name)
+		zoneIDNameMapper.Add(z.Name, z.Name)
 	}
 	p.zoneIDNameMapper = zoneIDNameMapper
 }
@@ -203,10 +203,10 @@ func (p *ClouDNSProvider) getRecordsByZoneID(ctx context.Context) (map[string][]
 		// Add full zone information
 		zonedRecords := []cdns.Record{}
 		for _, r := range records {
-			r.Zone = &zone
+			// r.Zone = &zone
 			zonedRecords = append(zonedRecords, r)
 		}
-		recordsByZoneID[zone.Domain] = append(recordsByZoneID[zone.Domain], zonedRecords...)
+		recordsByZoneID[zone.Name] = append(recordsByZoneID[zone.Name], zonedRecords...)
 	}
 
 	return recordsByZoneID, nil

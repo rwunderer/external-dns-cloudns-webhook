@@ -35,9 +35,9 @@ const (
 )
 
 // fetchRecords fetches all records for a given zoneID.
-func fetchRecords(ctx context.Context, zone cdns.Zone, dnsClient *cdns.Client, batchSize int) ([]cdns.Record, error) {
+func fetchRecords(ctx context.Context, zone cdns.Zone, dnsClient *cdns.Client, batchSize int) (cdns.RecordMap, error) {
 	metrics := metrics.GetOpenMetricsInstance()
-	records := []cdns.Record
+	records := cdns.RecordMap{}
 
 	start := time.Now()
 	records, err := dnsClient.Records.List(ctx, zone.Name)
@@ -55,7 +55,7 @@ func fetchRecords(ctx context.Context, zone cdns.Zone, dnsClient *cdns.Client, b
 // fetchZones fetches all the zones from the DNS client.
 func fetchZones(ctx context.Context, dnsClient *cdns.Client, batchSize int) ([]cdns.Zone, error) {
 	metrics := metrics.GetOpenMetricsInstance()
-	zones := []cdns.Zone
+	zones := []cdns.Zone{}
 
 	start := time.Now()
 	zones, err := dnsClient.Zones.List(ctx)

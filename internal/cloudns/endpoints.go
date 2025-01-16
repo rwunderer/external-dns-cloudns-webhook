@@ -93,22 +93,22 @@ func mergeEndpointsByNameType(endpoints []*endpoint.Endpoint) []*endpoint.Endpoi
 }
 
 // createEndpointFromRecord creates an endpoint from a record.
-func createEndpointFromRecord(r cdns.Record) *endpoint.Endpoint {
-	name := fmt.Sprintf("%s.%s", r.Name, r.Zone.Name)
+func createEndpointFromRecord(r cdns.Record, z cdns.Zone) *endpoint.Endpoint {
+	name := fmt.Sprintf("%s.%s", r.Host, z.Domain)
 
 	// root name is identified by @ and should be
 	// translated to zone name for the endpoint entry.
-	if r.Name == "@" {
-		name = r.Zone.Name
+	if r.Host == "@" {
+		name = z.Domain
 	}
 
 	// Handle local CNAMEs
-	target := r.Value
-	if r.Type == cdns.RecordTypeCNAME && !strings.HasSuffix(r.Value, ".") {
+	target := r.Record
+	if r.RecordType == cdns.RecordTypeCNAME && !strings.HasSuffix(r.Value, ".") {
 		target = fmt.Sprintf("%s.%s.", r.Value, r.Zone.Name)
 	}
-	ep := endpoint.NewEndpoint(name, string(r.Type), target)
-	ep.RecordTTL = endpoint.TTL(r.Ttl)
+	ep := endpoint.NewEndpoint(name, string(r.RecordType), target)
+	ep.RecordTTL = endpoint.TTL(r.TTL)
 	return ep
 }
 

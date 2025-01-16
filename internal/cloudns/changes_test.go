@@ -50,8 +50,8 @@ func Test_cloudnsChanges_empty(t *testing.T) {
 			changes: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID:  "alphaZoneID",
-						Options: &cdns.RecordCreateOpts{},
+						ZoneID:  "alpha.com",
+						Record: cdns.Record{},
 					},
 				},
 			},
@@ -61,9 +61,8 @@ func Test_cloudnsChanges_empty(t *testing.T) {
 			changes: cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID:  "alphaZoneID",
+						ZoneID:  "alpha.com",
 						Record:  cdns.Record{},
-						Options: &cdns.RecordUpdateOpts{},
 					},
 				},
 			},
@@ -73,7 +72,7 @@ func Test_cloudnsChanges_empty(t *testing.T) {
 			changes: cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "alphaZoneID",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{},
 					},
 				},
@@ -84,20 +83,19 @@ func Test_cloudnsChanges_empty(t *testing.T) {
 			changes: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID:  "alphaZoneID",
-						Options: &cdns.RecordCreateOpts{},
+						ZoneID:  "alpha.com",
+						Record: cdns.Record{},
 					},
 				},
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID:  "alphaZoneID",
+						ZoneID:  "alpha.com",
 						Record:  cdns.Record{},
-						Options: &cdns.RecordUpdateOpts{},
 					},
 				},
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "alphaZoneID",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{},
 					},
 				},
@@ -119,7 +117,7 @@ func Test_cloudnsChanges_AddChangeCreate(t *testing.T) {
 		instance cloudnsChanges
 		input    struct {
 			zoneID  string
-			options *cdns.RecordCreateOpts
+			record *cdns.Record
 		}
 		expected cloudnsChanges
 	}
@@ -127,7 +125,7 @@ func Test_cloudnsChanges_AddChangeCreate(t *testing.T) {
 	run := func(t *testing.T, tc testCase) {
 		inp := tc.input
 		actual := tc.instance
-		actual.AddChangeCreate(inp.zoneID, inp.options)
+		actual.AddChangeCreate(inp.zoneID, inp.record)
 		assert.EqualValues(t, tc.expected, actual)
 	}
 
@@ -137,33 +135,25 @@ func Test_cloudnsChanges_AddChangeCreate(t *testing.T) {
 			instance: cloudnsChanges{},
 			input: struct {
 				zoneID  string
-				options *cdns.RecordCreateOpts
+				record *cdns.Record
 			}{
-				zoneID: "zoneIDAlpha",
-				options: &cdns.RecordCreateOpts{
-					Name:  "www",
-					Ttl:   &testTTL,
-					Type:  "A",
-					Value: "127.0.0.1",
-					Zone: &cdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
+				zoneID: "alpha.com",
+				record: &cdns.Record{
+					Host:  "www",
+					TTL:   &testTTL,
+					RecordType:  "A",
+					Record: "127.0.0.1",
 				},
 			},
 			expected: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &cdns.RecordCreateOpts{
-							Name:  "www",
-							Ttl:   &testTTL,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							TTL:   &testTTL,
+							RecordType:  "A",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -186,7 +176,6 @@ func Test_cloudnsChanges_AddChangeUpdate(t *testing.T) {
 		input    struct {
 			zoneID  string
 			record  cdns.Record
-			options *cdns.RecordUpdateOpts
 		}
 		expected cloudnsChanges
 	}
@@ -194,7 +183,7 @@ func Test_cloudnsChanges_AddChangeUpdate(t *testing.T) {
 	run := func(t *testing.T, tc testCase) {
 		inp := tc.input
 		actual := tc.instance
-		actual.AddChangeUpdate(inp.zoneID, inp.record, inp.options)
+		actual.AddChangeUpdate(inp.zoneID, inp.record)
 		assert.EqualValues(t, tc.expected, actual)
 	}
 
@@ -205,55 +194,26 @@ func Test_cloudnsChanges_AddChangeUpdate(t *testing.T) {
 			input: struct {
 				zoneID  string
 				record  cdns.Record
-				options *cdns.RecordUpdateOpts
 			}{
-				zoneID: "zoneIDAlpha",
+				zoneID: "alpha.com",
 				record: cdns.Record{
-					ID:    "id_1",
-					Name:  "www",
-					Ttl:   -1,
-					Type:  "A",
-					Value: "127.0.0.1",
-					Zone: &cdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-				},
-				options: &cdns.RecordUpdateOpts{
-					Name:  "www",
-					Ttl:   &testTTL,
-					Type:  "A",
-					Value: "127.0.0.1",
-					Zone: &cdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
+					ID:    1,
+					Host:  "www",
+					TTL:   -1,
+					RecordType:  "A",
+					Record: "127.0.0.1",
 				},
 			},
 			expected: cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							ID:    "id_1",
-							Name:  "www",
-							Ttl:   -1,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-						},
-						Options: &cdns.RecordUpdateOpts{
-							Name:  "www",
-							Ttl:   &testTTL,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+							ID:    1,
+							Host:  "www",
+							TTL:   -1,
+							RecordType:  "A",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -295,33 +255,25 @@ func Test_cloudnsChanges_AddChangeDelete(t *testing.T) {
 				zoneID string
 				record cdns.Record
 			}{
-				zoneID: "zoneIDAlpha",
+				zoneID: "alpha.com",
 				record: cdns.Record{
-					ID:    "id_1",
-					Name:  "www",
-					Ttl:   -1,
-					Type:  "A",
-					Value: "127.0.0.1",
-					Zone: &cdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
+					ID:    1,
+					Host:  "www",
+					TTL:   -1,
+					RecordType:  "A",
+					Record: "127.0.0.1",
 				},
 			},
 			expected: cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							ID:    "id_1",
-							Name:  "www",
-							Ttl:   -1,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+							ID:    1,
+							Host:  "www",
+							TTL:   -1,
+							RecordType:  "A",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -362,17 +314,13 @@ func Test_cloudnsChanges_applyDeletes(t *testing.T) {
 			changes: &cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							ID:    "id1",
-							Type:  cdns.RecordTypeA,
-							Name:  "www",
-							Value: "1.1.1.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl: -1,
+							ID:    1,
+							RecordType:  cdns.RecordTypeA,
+							Host:  "www",
+							Record: "1.1.1.1",
+							TTL: -1,
 						},
 					},
 				},
@@ -390,17 +338,13 @@ func Test_cloudnsChanges_applyDeletes(t *testing.T) {
 			changes: &cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							ID:    "id1",
-							Type:  cdns.RecordTypeA,
-							Name:  "www",
-							Value: "1.1.1.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl: -1,
+							ID:    1,
+							RecordType:  cdns.RecordTypeA,
+							Host:  "www",
+							Record: "1.1.1.1",
+							TTL: -1,
 						},
 					},
 				},
@@ -423,17 +367,13 @@ func Test_cloudnsChanges_applyDeletes(t *testing.T) {
 			changes: &cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							ID:    "id1",
-							Type:  cdns.RecordTypeA,
-							Name:  "www",
-							Value: "1.1.1.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl: -1,
+							ID:    1,
+							RecordType:  cdns.RecordTypeA,
+							Host:  "www",
+							Record: "1.1.1.1",
+							TTL: -1,
 						},
 					},
 				},
@@ -482,16 +422,12 @@ func Test_cloudnsChanges_applyCreates(t *testing.T) {
 			changes: &cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &cdns.RecordCreateOpts{
-							Name: "www",
-							Type: cdns.RecordTypeA,
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "127.0.0.1",
+							TTL:   &testTTL,
 						},
 					},
 				},
@@ -509,16 +445,12 @@ func Test_cloudnsChanges_applyCreates(t *testing.T) {
 			changes: &cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &cdns.RecordCreateOpts{
-							Name: "www",
-							Type: cdns.RecordTypeA,
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "127.0.0.1",
+							TTL:   &testTTL,
 						},
 					},
 				},
@@ -546,16 +478,12 @@ func Test_cloudnsChanges_applyCreates(t *testing.T) {
 			changes: &cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &cdns.RecordCreateOpts{
-							Name: "www",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host: "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   &testTTL,
 						},
 					},
 				},
@@ -604,26 +532,12 @@ func Test_cloudnsChanges_applyUpdates(t *testing.T) {
 			changes: &cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "www",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   testTTL,
-						},
-						Options: &cdns.RecordUpdateOpts{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "ftp",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+							Host:  "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   testTTL,
 						},
 					},
 				},
@@ -645,26 +559,12 @@ func Test_cloudnsChanges_applyUpdates(t *testing.T) {
 			changes: &cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "www",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   testTTL,
-						},
-						Options: &cdns.RecordUpdateOpts{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "ftp",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+							Host:  "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   testTTL,
 						},
 					},
 				},
@@ -683,26 +583,12 @@ func Test_cloudnsChanges_applyUpdates(t *testing.T) {
 			changes: &cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "www",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   testTTL,
-						},
-						Options: &cdns.RecordUpdateOpts{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "ftp",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+							Host:  "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   testTTL,
 						},
 					},
 				},
@@ -761,57 +647,35 @@ func Test_cloudnsChanges_ApplyChanges(t *testing.T) {
 			changes: &cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							ID:    "id1",
-							Type:  cdns.RecordTypeA,
-							Name:  "www",
-							Value: "1.1.1.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl: -1,
+							ID:    1,
+							RecordType:  cdns.RecordTypeA,
+							Host:  "www",
+							Record: "1.1.1.1",
+							TTL: -1,
 						},
 					},
 				},
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &cdns.RecordCreateOpts{
-							Name: "www",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host: "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   &testTTL,
 						},
 					},
 				},
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "www",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   testTTL,
-						},
-						Options: &cdns.RecordUpdateOpts{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "ftp",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+							Host:  "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   testTTL,
 						},
 					},
 				},
@@ -833,17 +697,13 @@ func Test_cloudnsChanges_ApplyChanges(t *testing.T) {
 			changes: &cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							ID:    "id1",
-							Type:  cdns.RecordTypeA,
-							Name:  "www",
-							Value: "1.1.1.1",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl: -1,
+							ID:    1,
+							RecordType:  cdns.RecordTypeA,
+							Host:  "www",
+							Record: "1.1.1.1",
+							TTL: -1,
 						},
 					},
 				},
@@ -868,16 +728,12 @@ func Test_cloudnsChanges_ApplyChanges(t *testing.T) {
 			changes: &cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &cdns.RecordCreateOpts{
-							Name: "www",
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host: "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   &testTTL,
 						},
 					},
 				},
@@ -907,26 +763,12 @@ func Test_cloudnsChanges_ApplyChanges(t *testing.T) {
 			changes: &cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
+						ZoneID: "alpha.com",
 						Record: cdns.Record{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "www",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   testTTL,
-						},
-						Options: &cdns.RecordUpdateOpts{
-							Zone: &cdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Name:  "ftp",
-							Type:  "A",
-							Value: "127.0.0.1",
-							Ttl:   &testTTL,
+							Host:  "www",
+							RecordType:  "A",
+							Record: "127.0.0.1",
+							TTL:   testTTL,
 						},
 					},
 				},
@@ -948,4 +790,17 @@ func Test_cloudnsChanges_ApplyChanges(t *testing.T) {
 			run(t, tc)
 		})
 	}
+}
+
+// assertError checks if an error is thrown when expected.
+func assertError(t *testing.T, expected, actual error) bool {
+	var expError bool
+	if expected == nil {
+		assert.Nil(t, actual)
+		expError = false
+	} else {
+		assert.EqualError(t, actual, expected.Error())
+		expError = true
+	}
+	return expError
 }

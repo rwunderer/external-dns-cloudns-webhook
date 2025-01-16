@@ -61,17 +61,13 @@ func processCreateActionsByZone(zoneID, zoneName string, records []cdns.Record, 
 			if ep.RecordType == "CNAME" {
 				target = adjustCNAMETarget(zoneName, target)
 			}
-			opts := &cdns.RecordCreateOpts{
-				Name:  makeEndpointName(zoneName, ep.DNSName),
-				Ttl:   getEndpointTTL(ep),
-				Type:  cdns.RecordType(ep.RecordType),
-				Value: target,
-				Zone: &cdns.Zone{
-					ID:   zoneID,
-					Name: zoneName,
-				},
-			}
-			changes.AddChangeCreate(zoneID, opts)
+            rec := cdns.NewRecord(
+                cdns.RecordType(ep.RecordType),
+				makeEndpointName(zoneName, ep.DNSName),
+                target,
+                getEndpointTTL(ep),
+            )
+			changes.AddChangeCreate(zoneID, rec)
 		}
 	}
 }
@@ -103,34 +99,26 @@ func processUpdateEndpoint(zoneID, zoneName string, matchingRecordsByTarget map[
 		if ep.RecordType == "CNAME" {
 			target = adjustCNAMETarget(zoneName, target)
 		}
-		if record, ok := matchingRecordsByTarget[target]; ok {
-			opts := &cdns.RecordUpdateOpts{
-				Name:  makeEndpointName(zoneName, ep.DNSName),
-				Ttl:   getEndpointTTL(ep),
-				Type:  cdns.RecordType(ep.RecordType),
-				Value: target,
-				Zone: &cdns.Zone{
-					ID:   zoneID,
-					Name: zoneName,
-				},
-			}
-			changes.AddChangeUpdate(zoneID, record, opts)
+		if _, ok := matchingRecordsByTarget[target]; ok {
+            rec := cdns.NewRecord(
+                cdns.RecordType(ep.RecordType),
+				makeEndpointName(zoneName, ep.DNSName),
+                target,
+                getEndpointTTL(ep),
+            )
+			changes.AddChangeUpdate(zoneID, rec)
 
 			// Updates are removed from this map.
 			delete(matchingRecordsByTarget, target)
 		} else {
 			// Record did not previously exist, create new 'target'
-			opts := &cdns.RecordCreateOpts{
-				Name:  makeEndpointName(zoneName, ep.DNSName),
-				Ttl:   getEndpointTTL(ep),
-				Type:  cdns.RecordType(ep.RecordType),
-				Value: target,
-				Zone: &cdns.Zone{
-					ID:   zoneID,
-					Name: zoneName,
-				},
-			}
-			changes.AddChangeCreate(zoneID, opts)
+            rec := cdns.NewRecord(
+                cdns.RecordType(ep.RecordType),
+				makeEndpointName(zoneName, ep.DNSName),
+                target,
+                getEndpointTTL(ep),
+            )
+			changes.AddChangeCreate(zoneID, rec)
 		}
 	}
 }
@@ -147,7 +135,7 @@ func cleanupRemainingTargets(zoneID string, matchingRecordsByTarget map[string]c
 func getMatchingRecordsByTarget(records []cdns.Record) map[string]cdns.Record {
 	recordsMap := make(map[string]cdns.Record, 0)
 	for _, r := range records {
-		recordsMap[r.Value] = r
+		recordsMap[r.Record] = r
 	}
 	return recordsMap
 }
@@ -201,7 +189,7 @@ func processUpdateActions(
 func targetsMatch(record cdns.Record, ep *endpoint.Endpoint) bool {
 	for _, t := range ep.Targets {
 		endpointTarget := t
-		recordTarget := record.Value
+		recordTarget := record.Record
 		if ep.RecordType == endpoint.RecordTypeCNAME {
 			domain := record.Zone.Name
 			endpointTarget = adjustCNAMETarget(domain, t)

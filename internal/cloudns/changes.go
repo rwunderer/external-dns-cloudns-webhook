@@ -44,7 +44,7 @@ func (c *cloudnsChanges) empty() bool {
 
 // AddChangeCreate adds a new creation entry to the current object.
 func (c *cloudnsChanges) AddChangeCreate(zoneID string, record *cdns.Record) {
-	changeCreate := &hetznerChangeCreate{
+	changeCreate := &cloudnsChangeCreate{
 		ZoneID: zoneID,
 		Record: record,
 	}
@@ -95,9 +95,9 @@ func (c cloudnsChanges) applyCreates(ctx context.Context, dnsClient *cdns.Client
 	metrics := metrics.GetOpenMetricsInstance()
 	for _, e := range c.creates {
 		rec := e.Record
-		if rec.Ttl == nil {
+		if rec.TTL == nil {
 			ttl := c.defaultTTL
-			rec.Ttl = &ttl
+			rec.TTL = ttl
 		}
 		log.WithFields(e.GetLogFields()).Debug("Creating domain record")
 		log.Infof("Creating record [%s] of type [%s] with value [%s] in zone [%s]",
@@ -122,13 +122,13 @@ func (c cloudnsChanges) applyUpdates(ctx context.Context, dnsClient *cdns.Client
 	metrics := metrics.GetOpenMetricsInstance()
 	for _, e := range c.updates {
 		rec := e.Record
-		if rec.Ttl == nil {
+		if rec.TTL == nil {
 			ttl := c.defaultTTL
-			rec.Ttl = &ttl
+			rec.TTL = ttl
 		}
 		log.WithFields(e.GetLogFields()).Debug("Updating domain record")
 		log.Infof("Updating record ID [%s] with name [%s], type [%s], value [%s] and TTL [%d] in zone [%s]",
-			e.Record.ID, rec.Name, rec.Type, rec.Value, rec.Ttl, e.ZoneID)
+			e.Record.ID, rec.Name, rec.Type, rec.Value, rec.TTL, e.ZoneID)
 		if c.dryRun {
 			continue
 		}

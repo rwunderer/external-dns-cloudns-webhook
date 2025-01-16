@@ -27,9 +27,12 @@ import (
 	"sigs.k8s.io/external-dns/provider"
 )
 
+// testTTL is a test ttl.
+var testTTL = 7200
+
 var testZoneIDMapper = provider.ZoneIDName{
-	"zoneIDAlpha": "alpha.com",
-	"zoneIDBeta":  "beta.com",
+	"alpha.com": "alpha.com",
+	"beta.com":  "beta.com",
 }
 
 func assertEqualChanges(t *testing.T, expected, actual cloudnsChanges) {
@@ -117,7 +120,7 @@ func Test_processCreateActionsByZone(t *testing.T) {
 		input struct {
 			zoneID    string
 			zoneName  string
-			records   []hdns.Record
+			records   []cdns.Record
 			endpoints []*endpoint.Endpoint
 		}
 		expectedChanges cloudnsChanges
@@ -137,17 +140,17 @@ func Test_processCreateActionsByZone(t *testing.T) {
 			input: struct {
 				zoneID    string
 				zoneName  string
-				records   []hdns.Record
+				records   []cdns.Record
 				endpoints []*endpoint.Endpoint
 			}{
-				zoneID:   "zoneIDAlpha",
+				zoneID:   "alpha.com",
 				zoneName: "alpha.com",
-				records: []hdns.Record{
+				records: []cdns.Record{
 					{
-						Type:  "A",
-						Name:  "www",
-						Value: "127.0.0.1",
-						Ttl:   7200,
+						RecordType:  "A",
+						Host:  "www",
+						Record: "127.0.0.1",
+						TTL:   7200,
 					},
 				},
 				endpoints: []*endpoint.Endpoint{
@@ -162,16 +165,12 @@ func Test_processCreateActionsByZone(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &hdns.RecordCreateOpts{
-							Name:  "www",
-							Ttl:   &testTTL,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							TTL:   &testTTL,
+							RecordType:  "A",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -182,16 +181,16 @@ func Test_processCreateActionsByZone(t *testing.T) {
 			input: struct {
 				zoneID    string
 				zoneName  string
-				records   []hdns.Record
+				records   []cdns.Record
 				endpoints []*endpoint.Endpoint
 			}{
-				zoneID:   "zoneIDAlpha",
+				zoneID:   "alpha.com",
 				zoneName: "alpha.com",
-				records: []hdns.Record{
+				records: []cdns.Record{
 					{
-						Type:  "A",
-						Name:  "ftp",
-						Value: "127.0.0.1",
+						RecordType:  "A",
+						Host:  "ftp",
+						Record: "127.0.0.1",
 						Ttl:   7200,
 					},
 				},
@@ -207,16 +206,12 @@ func Test_processCreateActionsByZone(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &hdns.RecordCreateOpts{
-							Name:  "www",
-							Ttl:   &testTTL,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							TTL:   &testTTL,
+							RecordType:  "A",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -237,7 +232,7 @@ func Test_processCreateActions(t *testing.T) {
 		name  string
 		input struct {
 			zoneIDNameMapper provider.ZoneIDName
-			recordsByZoneID  map[string][]hdns.Record
+			recordsByZoneID  map[string][]cdns.Record
 			createsByZoneID  map[string][]*endpoint.Endpoint
 		}
 		expectedChanges cloudnsChanges
@@ -256,16 +251,16 @@ func Test_processCreateActions(t *testing.T) {
 			name: "empty changeset",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				createsByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: testZoneIDMapper,
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							Type:  "A",
-							Name:  "www",
-							Value: "127.0.0.1",
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							RecordType:  "A",
+							Host:  "www",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -276,21 +271,21 @@ func Test_processCreateActions(t *testing.T) {
 			name: "empty changeset with key present",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				createsByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: testZoneIDMapper,
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							Type:  "A",
-							Name:  "www",
-							Value: "127.0.0.1",
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							RecordType:  "A",
+							Host:  "www",
+							Record: "127.0.0.1",
 						},
 					},
 				},
 				createsByZoneID: map[string][]*endpoint.Endpoint{
-					"zoneIDAlpha": {},
+					"alpha.com": {},
 				},
 			},
 		},
@@ -298,22 +293,22 @@ func Test_processCreateActions(t *testing.T) {
 			name: "record already created",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				createsByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: testZoneIDMapper,
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							Type:  "A",
-							Name:  "www",
-							Value: "127.0.0.1",
-							Ttl:   7200,
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							RecordType:  "A",
+							Host:  "www",
+							Record: "127.0.0.1",
+							TTL:   7200,
 						},
 					},
 				},
 				createsByZoneID: map[string][]*endpoint.Endpoint{
-					"zoneIDAlpha": {
+					"alpha.com": {
 						&endpoint.Endpoint{
 							DNSName:    "www.alpha.com",
 							Targets:    endpoint.Targets{"127.0.0.1"},
@@ -326,16 +321,12 @@ func Test_processCreateActions(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &hdns.RecordCreateOpts{
-							Name:  "www",
-							Ttl:   &testTTL,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							TTTL:   &testTTL,
+							RecordType:  "A",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -345,22 +336,22 @@ func Test_processCreateActions(t *testing.T) {
 			name: "new record created",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				createsByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: testZoneIDMapper,
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							Type:  "A",
-							Name:  "ftp",
-							Value: "127.0.0.1",
-							Ttl:   7200,
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							RecordType:  "A",
+							Host:  "ftp",
+							Record: "127.0.0.1",
+							TTL:   7200,
 						},
 					},
 				},
 				createsByZoneID: map[string][]*endpoint.Endpoint{
-					"zoneIDAlpha": {
+					"alpha.com": {
 						&endpoint.Endpoint{
 							DNSName:    "www.alpha.com",
 							Targets:    endpoint.Targets{"127.0.0.1"},
@@ -373,16 +364,12 @@ func Test_processCreateActions(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &hdns.RecordCreateOpts{
-							Name:  "www",
-							Ttl:   &testTTL,
-							Type:  "A",
-							Value: "127.0.0.1",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							TTL:   &testTTL,
+							RecordType:  "A",
+							Record: "127.0.0.1",
 						},
 					},
 				},
@@ -404,7 +391,7 @@ func Test_processUpdateEndpoint(t *testing.T) {
 		input struct {
 			zoneID                  string
 			zoneName                string
-			matchingRecordsByTarget map[string]hdns.Record
+			matchingRecordsByTarget map[string]cdns.Record
 			ep                      *endpoint.Endpoint
 		}
 		expectedChanges cloudnsChanges
@@ -424,22 +411,18 @@ func Test_processUpdateEndpoint(t *testing.T) {
 			input: struct {
 				zoneID                  string
 				zoneName                string
-				matchingRecordsByTarget map[string]hdns.Record
+				matchingRecordsByTarget map[string]cdns.Record
 				ep                      *endpoint.Endpoint
 			}{
-				zoneID:   "zoneIDAlpha",
+				zoneID:   "alpha.com",
 				zoneName: "alpha.com",
-				matchingRecordsByTarget: map[string]hdns.Record{
+				matchingRecordsByTarget: map[string]cdns.Record{
 					"1.1.1.1": {
-						ID:   "id_1",
-						Type: hdns.RecordTypeA,
-						Name: "www",
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						RecordType: cdns.RecordTypeA,
+						Host: "www",
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 				},
 				ep: &endpoint.Endpoint{
@@ -452,27 +435,13 @@ func Test_processUpdateEndpoint(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_1",
-							Type: hdns.RecordTypeA,
-							Name: "www",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
-						},
-						Options: &hdns.RecordUpdateOpts{
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl:   nil,
-							Value: "1.1.1.1",
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   1,
+							RecordType: cdns.RecordTypeA,
+							Host: "www",
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
 				},
@@ -483,22 +452,18 @@ func Test_processUpdateEndpoint(t *testing.T) {
 			input: struct {
 				zoneID                  string
 				zoneName                string
-				matchingRecordsByTarget map[string]hdns.Record
+				matchingRecordsByTarget map[string]cdns.Record
 				ep                      *endpoint.Endpoint
 			}{
-				zoneID:   "zoneIDAlpha",
+				zoneID:   "alpha.com",
 				zoneName: "alpha.com",
-				matchingRecordsByTarget: map[string]hdns.Record{
+				matchingRecordsByTarget: map[string]cdns.Record{
 					"1.1.1.1": {
-						ID:   "id_1",
-						Type: hdns.RecordTypeA,
-						Name: "www",
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						RecordType: cdns.RecordTypeA,
+						Host: "www",
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 				},
 				ep: &endpoint.Endpoint{
@@ -511,27 +476,13 @@ func Test_processUpdateEndpoint(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_1",
-							Type: hdns.RecordTypeA,
-							Name: "www",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   1,
+							RecordType: cdns.RecordTypeA,
+							Host: "www",
+							Record: "1.1.1.1",
 							Ttl:   -1,
-						},
-						Options: &hdns.RecordUpdateOpts{
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl:   &testTTL,
-							Value: "1.1.1.1",
 						},
 					},
 				},
@@ -542,22 +493,18 @@ func Test_processUpdateEndpoint(t *testing.T) {
 			input: struct {
 				zoneID                  string
 				zoneName                string
-				matchingRecordsByTarget map[string]hdns.Record
+				matchingRecordsByTarget map[string]cdns.Record
 				ep                      *endpoint.Endpoint
 			}{
-				zoneID:   "zoneIDAlpha",
+				zoneID:   "alpha.com",
 				zoneName: "alpha.com",
-				matchingRecordsByTarget: map[string]hdns.Record{
+				matchingRecordsByTarget: map[string]cdns.Record{
 					"1.1.1.1": {
-						ID:   "id_1",
-						Name: "www",
-						Type: hdns.RecordTypeA,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						Host: "www",
+						RecordType: cdns.RecordTypeA,
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 				},
 				ep: &endpoint.Endpoint{
@@ -570,16 +517,12 @@ func Test_processUpdateEndpoint(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &hdns.RecordCreateOpts{
-							Name:  "www",
-							Ttl:   nil,
-							Type:  hdns.RecordTypeA,
-							Value: "2.2.2.2",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							TTL:   nil,
+							RecordType:  cdns.RecordTypeA,
+							Record: "2.2.2.2",
 						},
 					},
 				},
@@ -600,7 +543,7 @@ func Test_cleanupRemainingTargets(t *testing.T) {
 		name  string
 		input struct {
 			zoneID                  string
-			matchingRecordsByTarget map[string]hdns.Record
+			matchingRecordsByTarget map[string]cdns.Record
 		}
 		expectedChanges cloudnsChanges
 	}
@@ -618,47 +561,39 @@ func Test_cleanupRemainingTargets(t *testing.T) {
 			name: "no deletes",
 			input: struct {
 				zoneID                  string
-				matchingRecordsByTarget map[string]hdns.Record
+				matchingRecordsByTarget map[string]cdns.Record
 			}{
-				zoneID:                  "zoneIDAlpha",
-				matchingRecordsByTarget: map[string]hdns.Record{},
+				zoneID:                  "alpha.com",
+				matchingRecordsByTarget: map[string]cdns.Record{},
 			},
 		},
 		{
 			name: "delete",
 			input: struct {
 				zoneID                  string
-				matchingRecordsByTarget map[string]hdns.Record
+				matchingRecordsByTarget map[string]cdns.Record
 			}{
-				zoneID: "zoneIDAlpha",
-				matchingRecordsByTarget: map[string]hdns.Record{
+				zoneID: "alpha.com",
+				matchingRecordsByTarget: map[string]cdns.Record{
 					"1.1.1.1": {
-						ID:   "id_1",
-						Name: "www",
-						Type: hdns.RecordTypeA,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						Host: "www",
+						RecordType: cdns.RecordTypeA,
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 				},
 			},
 			expectedChanges: cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   1,
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
 				},
@@ -677,8 +612,8 @@ func Test_cleanupRemainingTargets(t *testing.T) {
 func Test_getMatchingRecordsByTarget(t *testing.T) {
 	type testCase struct {
 		name     string
-		input    []hdns.Record
-		expected map[string]hdns.Record
+		input    []cdns.Record
+		expected map[string]ccdns.Record
 	}
 
 	run := func(t *testing.T, tc testCase) {
@@ -689,57 +624,41 @@ func Test_getMatchingRecordsByTarget(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:     "empty array",
-			input:    []hdns.Record{},
-			expected: map[string]hdns.Record{},
+			input:    []cdns.Record{},
+			expected: map[string]cdns.Record{},
 		},
 		{
 			name: "some values",
-			input: []hdns.Record{
+			input: []cdns.Record{
 				{
-					ID:   "id_1",
-					Name: "www",
-					Type: hdns.RecordTypeA,
-					Zone: &hdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-					Value: "1.1.1.1",
-					Ttl:   -1,
+					ID:   1,
+					Host: "www",
+					RecordType: cdns.RecordTypeA,
+					Record: "1.1.1.1",
+					TTL:   -1,
 				},
 				{
-					ID:   "id_2",
-					Name: "ftp",
-					Type: hdns.RecordTypeA,
-					Zone: &hdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-					Value: "2.2.2.2",
-					Ttl:   -1,
+					ID:   2,
+					Host: "ftp",
+					RecordType: cdns.RecordTypeA,
+					Record: "2.2.2.2",
+					TTL:   -1,
 				},
 			},
-			expected: map[string]hdns.Record{
+			expected: map[string]cdns.Record{
 				"1.1.1.1": {
-					ID:   "id_1",
-					Name: "www",
-					Type: hdns.RecordTypeA,
-					Zone: &hdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-					Value: "1.1.1.1",
-					Ttl:   -1,
+					ID:   1,
+					Host: "www",
+					RecordType: cdns.RecordTypeA,
+					Record: "1.1.1.1",
+					TTL:   -1,
 				},
 				"2.2.2.2": {
-					ID:   "id_2",
-					Name: "ftp",
-					Type: hdns.RecordTypeA,
-					Zone: &hdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-					Value: "2.2.2.2",
-					Ttl:   -1,
+					ID:   2,
+					Host: "ftp",
+					RecordType: cdns.RecordTypeA,
+					Record: "2.2.2.2",
+					TTL:   -1,
 				},
 			},
 		},
@@ -759,7 +678,7 @@ func Test_processUpdateActionsByZone(t *testing.T) {
 		input struct {
 			zoneID    string
 			zoneName  string
-			records   []hdns.Record
+			records   []cdns.Record
 			endpoints []*endpoint.Endpoint
 		}
 		expectedChanges cloudnsChanges
@@ -779,21 +698,17 @@ func Test_processUpdateActionsByZone(t *testing.T) {
 			input: struct {
 				zoneID    string
 				zoneName  string
-				records   []hdns.Record
+				records   []cdns.Record
 				endpoints []*endpoint.Endpoint
 			}{
-				zoneID:   "zoneIDAlpha",
+				zoneID:   "alpha.com",
 				zoneName: "alpha.com",
-				records: []hdns.Record{
+				records: []cdns.Record{
 					{
-						ID:   "id_1",
-						Name: "www",
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						Host: "www",
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 				},
 				endpoints: []*endpoint.Endpoint{},
@@ -805,33 +720,25 @@ func Test_processUpdateActionsByZone(t *testing.T) {
 			input: struct {
 				zoneID    string
 				zoneName  string
-				records   []hdns.Record
+				records   []cdns.Record
 				endpoints []*endpoint.Endpoint
 			}{
-				zoneID:   "zoneIDAlpha",
+				zoneID:   "alpha.com",
 				zoneName: "alpha.com",
-				records: []hdns.Record{
+				records: []cdns.Record{
 					{
-						ID:   "id_1",
-						Name: "www",
-						Type: hdns.RecordTypeA,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						Host: "www",
+						RecordType: cdns.RecordTypeA,
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 					{
 						ID:   "id_2",
-						Name: "ftp",
-						Type: hdns.RecordTypeA,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "2.2.2.2",
-						Ttl:   -1,
+						Host: "ftp",
+						RecordType: cdns.RecordTypeA,
+						Record: "2.2.2.2",
+						TTL:   -1,
 					},
 				},
 				endpoints: []*endpoint.Endpoint{
@@ -852,58 +759,42 @@ func Test_processUpdateActionsByZone(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &hdns.RecordCreateOpts{
-							Name:  "www",
-							Ttl:   nil,
-							Type:  hdns.RecordTypeA,
-							Value: "3.3.3.3",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							TTL:   nil,
+							RecordType:  cdns.RecordTypeA,
+							Record: "3.3.3.3",
 						},
 					},
 				},
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   1,
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
 				},
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							RecordType: cdns.RecordTypeA,
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
-						Options: &hdns.RecordUpdateOpts{
-							Name: "ftp",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Type:  hdns.RecordTypeA,
-							Value: "2.2.2.2",
-							Ttl:   &testTTL,
+						Options: &cdns.RecordUpdateOpts{
+							Host: "ftp",
+							RecordType:  cdns.RecordTypeA,
+							Record: "2.2.2.2",
+							TTL:   &testTTL,
 						},
 					},
 				},
@@ -924,7 +815,7 @@ func Test_processUpdateActions(t *testing.T) {
 		name  string
 		input struct {
 			zoneIDNameMapper provider.ZoneIDName
-			recordsByZoneID  map[string][]hdns.Record
+			recordsByZoneID  map[string][]cdns.Record
 			updatesByZoneID  map[string][]*endpoint.Endpoint
 		}
 		expectedChanges cloudnsChanges
@@ -943,36 +834,28 @@ func Test_processUpdateActions(t *testing.T) {
 			name: "empty changeset",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				updatesByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: provider.ZoneIDName{
-					"zoneIDAlpha": "alpha.com",
-					"zoneIDBeta":  "beta.com",
+					"alpha.com": "alpha.com",
+					"beta.com":  "beta.com",
 				},
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							ID:   1,
+							Host: "www",
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
-					"zoneIDBeta": {
-						hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
+					"beta.com": {
+						cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
 					},
 				},
@@ -984,42 +867,34 @@ func Test_processUpdateActions(t *testing.T) {
 			name: "empty changeset with key present",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				updatesByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: provider.ZoneIDName{
-					"zoneIDAlpha": "alpha.com",
-					"zoneIDBeta":  "beta.com",
+					"alpha.com": "alpha.com",
+					"beta.com":  "beta.com",
 				},
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							ID:   1,
+							Host: "www",
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
-					"zoneIDBeta": {
-						hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
+					"beta.com": {
+						cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
 					},
 				},
 				updatesByZoneID: map[string][]*endpoint.Endpoint{
-					"zoneIDAlpha": {},
-					"zoneIDBeta":  {},
+					"alpha.com": {},
+					"beta.com":  {},
 				},
 			},
 		},
@@ -1027,43 +902,35 @@ func Test_processUpdateActions(t *testing.T) {
 			name: "mixed changeset",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				updatesByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: provider.ZoneIDName{
-					"zoneIDAlpha": "alpha.com",
-					"zoneIDBeta":  "beta.com",
+					"alpha.com": "alpha.com",
+					"beta.com":  "beta.com",
 				},
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							ID:   1,
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
-					"zoneIDBeta": {
-						hdns.Record{
-							ID:   "id_2",
+					"beta.com": {
+						cdns.Record{
+							ID:   2,
 							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
+							RecordType: cdns.RecordTypeA,
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
 					},
 				},
 				updatesByZoneID: map[string][]*endpoint.Endpoint{
-					"zoneIDAlpha": {
+					"alpha.com": {
 						&endpoint.Endpoint{
 							DNSName:    "www.alpha.com",
 							RecordType: "A",
@@ -1071,7 +938,7 @@ func Test_processUpdateActions(t *testing.T) {
 							RecordTTL:  -1,
 						},
 					},
-					"zoneIDBeta": {
+					"beta.com": {
 						&endpoint.Endpoint{
 							DNSName:    "ftp.beta.com",
 							RecordType: "A",
@@ -1084,58 +951,36 @@ func Test_processUpdateActions(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				creates: []*cloudnsChangeCreate{
 					{
-						ZoneID: "zoneIDAlpha",
-						Options: &hdns.RecordCreateOpts{
-							Name:  "www",
-							Type:  hdns.RecordTypeA,
-							Value: "3.3.3.3",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Ttl: nil,
+						ZoneID: "alpha.com",
+						Record: &cdns.Record{
+							Host:  "www",
+							RecordType:  cdns.RecordTypeA,
+							Record: "3.3.3.3",
+							TTL: nil,
 						},
 					},
 				},
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   1,
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
 				},
 				updates: []*cloudnsChangeUpdate{
 					{
-						ZoneID: "zoneIDBeta",
-						Record: hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
-						},
-						Options: &hdns.RecordUpdateOpts{
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   &testTTL,
+						ZoneID: "beta.com",
+						Record: cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							RecordType: cdns.RecordTypeA,
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
 					},
 				},
@@ -1154,7 +999,7 @@ func Test_targetsMatch(t *testing.T) {
 	type testCase struct {
 		name  string
 		input struct {
-			record hdns.Record
+			record cdns.Record
 			ep     *endpoint.Endpoint
 		}
 		expected bool
@@ -1170,19 +1015,15 @@ func Test_targetsMatch(t *testing.T) {
 		{
 			name: "record does not matches",
 			input: struct {
-				record hdns.Record
+				record cdns.Record
 				ep     *endpoint.Endpoint
 			}{
-				record: hdns.Record{
-					ID:   "id_1",
-					Name: "www",
-					Type: hdns.RecordTypeA,
-					Zone: &hdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-					Value: "1.1.1.1",
-					Ttl:   -1,
+				record: cdns.Record{
+					ID:   1,
+					Host: "www",
+					RecordType: cdns.RecordTypeA,
+					Record: "1.1.1.1",
+					TTL:   -1,
 				},
 				ep: &endpoint.Endpoint{
 					DNSName:    "www.alpha.com",
@@ -1196,19 +1037,15 @@ func Test_targetsMatch(t *testing.T) {
 		{
 			name: "record matches",
 			input: struct {
-				record hdns.Record
+				record cdns.Record
 				ep     *endpoint.Endpoint
 			}{
-				record: hdns.Record{
-					ID:   "id_1",
-					Name: "www",
-					Type: hdns.RecordTypeA,
-					Zone: &hdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-					Value: "1.1.1.1",
-					Ttl:   -1,
+				record: cdns.Record{
+					ID:   1,
+					Host: "www",
+					RecordType: cdns.RecordTypeA,
+					Record: "1.1.1.1",
+					TTL:   -1,
 				},
 				ep: &endpoint.Endpoint{
 					DNSName:    "www.alpha.com",
@@ -1222,19 +1059,15 @@ func Test_targetsMatch(t *testing.T) {
 		{
 			name: "cname special matching",
 			input: struct {
-				record hdns.Record
+				record cdns.Record
 				ep     *endpoint.Endpoint
 			}{
-				record: hdns.Record{
-					ID:   "id_2",
-					Name: "ftp",
-					Type: hdns.RecordTypeCNAME,
-					Zone: &hdns.Zone{
-						ID:   "zoneIDAlpha",
-						Name: "alpha.com",
-					},
-					Value: "www.beta.com.",
-					Ttl:   -1,
+				record: cdns.Record{
+					ID:   2,
+					Host: "ftp",
+					RecordType: cdns.RecordTypeCNAME,
+					Record: "www.beta.com.",
+					TTL:   -1,
 				},
 				ep: &endpoint.Endpoint{
 					DNSName:    "ftp.alpha.com",
@@ -1260,7 +1093,7 @@ func Test_processDeleteActionsByEndpoint(t *testing.T) {
 		name  string
 		input struct {
 			zoneID          string
-			matchingRecords []hdns.Record
+			matchingRecords []cdns.Record
 			ep              *endpoint.Endpoint
 		}
 		expectedChanges cloudnsChanges
@@ -1279,11 +1112,11 @@ func Test_processDeleteActionsByEndpoint(t *testing.T) {
 			name: "no matching records",
 			input: struct {
 				zoneID          string
-				matchingRecords []hdns.Record
+				matchingRecords []cdns.Record
 				ep              *endpoint.Endpoint
 			}{
-				zoneID:          "zoneIDAlpha",
-				matchingRecords: []hdns.Record{},
+				zoneID:          "alpha.com",
+				matchingRecords: []cdns.Record{},
 				ep: &endpoint.Endpoint{
 					DNSName:    "ccx.alpha.com",
 					Targets:    endpoint.Targets{"7.7.7.7"},
@@ -1297,32 +1130,24 @@ func Test_processDeleteActionsByEndpoint(t *testing.T) {
 			name: "one matching record",
 			input: struct {
 				zoneID          string
-				matchingRecords []hdns.Record
+				matchingRecords []cdns.Record
 				ep              *endpoint.Endpoint
 			}{
-				zoneID: "zoneIDAlpha",
-				matchingRecords: []hdns.Record{
+				zoneID: "alpha.com",
+				matchingRecords: []cdns.Record{
 					{
-						ID:   "id_1",
-						Name: "www",
-						Type: hdns.RecordTypeA,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						Host: "www",
+						RecordType: cdns.RecordTypeA,
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 					{
-						ID:   "id_2",
-						Name: "www",
-						Type: hdns.RecordTypeA,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "2.2.2.2",
-						Ttl:   -1,
+						ID:   2,
+						Host: "www",
+						RecordType: cdns.RecordTypeA,
+						Record: "2.2.2.2",
+						TTL:   -1,
 					},
 				},
 				ep: &endpoint.Endpoint{
@@ -1335,17 +1160,13 @@ func Test_processDeleteActionsByEndpoint(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   1,
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
 				},
@@ -1355,32 +1176,24 @@ func Test_processDeleteActionsByEndpoint(t *testing.T) {
 			name: "cname special matching",
 			input: struct {
 				zoneID          string
-				matchingRecords []hdns.Record
+				matchingRecords []cdns.Record
 				ep              *endpoint.Endpoint
 			}{
-				zoneID: "zoneIDAlpha",
-				matchingRecords: []hdns.Record{
+				zoneID: "alpha.com",
+				matchingRecords: []cdns.Record{
 					{
-						ID:   "id_1",
-						Name: "www",
-						Type: hdns.RecordTypeA,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "1.1.1.1",
-						Ttl:   -1,
+						ID:   1,
+						Host: "www",
+						RecordType: cdns.RecordTypeA,
+						Record: "1.1.1.1",
+						TTL:   -1,
 					},
 					{
-						ID:   "id_2",
-						Name: "ftp",
-						Type: hdns.RecordTypeCNAME,
-						Zone: &hdns.Zone{
-							ID:   "zoneIDAlpha",
-							Name: "alpha.com",
-						},
-						Value: "www.beta.com.",
-						Ttl:   -1,
+						ID:   2,
+						Host: "ftp",
+						RecordType: cdns.RecordTypeCNAME,
+						Record: "www.beta.com.",
+						TTL:   -1,
 					},
 				},
 				ep: &endpoint.Endpoint{
@@ -1393,17 +1206,13 @@ func Test_processDeleteActionsByEndpoint(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Type: hdns.RecordTypeCNAME,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "www.beta.com.",
-							Ttl:   -1,
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							RecordType: cdns.RecordTypeCNAME,
+							Record: "www.beta.com.",
+							TTL:   -1,
 						},
 					},
 				},
@@ -1424,7 +1233,7 @@ func Test_processDeleteActions(t *testing.T) {
 		name  string
 		input struct {
 			zoneIDNameMapper provider.ZoneIDName
-			recordsByZoneID  map[string][]hdns.Record
+			recordsByZoneID  map[string][]cdns.Record
 			deletesByZoneID  map[string][]*endpoint.Endpoint
 		}
 		expectedChanges cloudnsChanges
@@ -1443,41 +1252,33 @@ func Test_processDeleteActions(t *testing.T) {
 			name: "No deletes created",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				deletesByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: provider.ZoneIDName{
-					"zoneIDAlpha": "alpha.com",
-					"zoneIDBeta":  "beta.com",
+					"alpha.com": "alpha.com",
+					"beta.com":  "beta.com",
 				},
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							ID:   1,
+							Host: "www",
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
-					"zoneIDBeta": {
-						hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
+					"beta.com": {
+						cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
 					},
 				},
 				deletesByZoneID: map[string][]*endpoint.Endpoint{
-					"zoneIDAlpha": {
+					"alpha.com": {
 						&endpoint.Endpoint{
 							DNSName:    "ccx.alpha.com",
 							Targets:    endpoint.Targets{"7.7.7.7"},
@@ -1493,54 +1294,42 @@ func Test_processDeleteActions(t *testing.T) {
 			name: "deletes performed",
 			input: struct {
 				zoneIDNameMapper provider.ZoneIDName
-				recordsByZoneID  map[string][]hdns.Record
+				recordsByZoneID  map[string][]cdns.Record
 				deletesByZoneID  map[string][]*endpoint.Endpoint
 			}{
 				zoneIDNameMapper: provider.ZoneIDName{
-					"zoneIDAlpha": "alpha.com",
-					"zoneIDBeta":  "beta.com",
+					"alpha.com": "alpha.com",
+					"beta.com":  "beta.com",
 				},
-				recordsByZoneID: map[string][]hdns.Record{
-					"zoneIDAlpha": {
-						hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+				recordsByZoneID: map[string][]cdns.Record{
+					"alpha.com": {
+						cdns.Record{
+							ID:   1,
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
-					"zoneIDBeta": {
-						hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
+					"beta.com": {
+						cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							RecordType: cdns.RecordTypeA,
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
-						hdns.Record{
-							ID:   "id_3",
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "4.4.4.4",
-							Ttl:   -1,
+						cdns.Record{
+							ID:   3,
+							Host: "ftp",
+							RecordType: cdns.RecordTypeA,
+							Record: "4.4.4.4",
+							TTL:   -1,
 						},
 					},
 				},
 				deletesByZoneID: map[string][]*endpoint.Endpoint{
-					"zoneIDAlpha": {
+					"alpha.com": {
 						&endpoint.Endpoint{
 							DNSName:    "www.alpha.com",
 							Targets:    endpoint.Targets{"1.1.1.1"},
@@ -1548,7 +1337,7 @@ func Test_processDeleteActions(t *testing.T) {
 							RecordTTL:  -1,
 						},
 					},
-					"zoneIDBeta": {
+					"beta.com": {
 						&endpoint.Endpoint{
 							DNSName:    "ftp.beta.com",
 							Targets:    endpoint.Targets{"2.2.2.2", "4.4.4.4"},
@@ -1561,45 +1350,33 @@ func Test_processDeleteActions(t *testing.T) {
 			expectedChanges: cloudnsChanges{
 				deletes: []*cloudnsChangeDelete{
 					{
-						ZoneID: "zoneIDAlpha",
-						Record: hdns.Record{
-							ID:   "id_1",
-							Name: "www",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDAlpha",
-								Name: "alpha.com",
-							},
-							Value: "1.1.1.1",
-							Ttl:   -1,
+						ZoneID: "alpha.com",
+						Record: cdns.Record{
+							ID:   1,
+							Host: "www",
+							RecordType: cdns.RecordTypeA,
+							Record: "1.1.1.1",
+							TTL:   -1,
 						},
 					},
 					{
-						ZoneID: "zoneIDBeta",
-						Record: hdns.Record{
-							ID:   "id_2",
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "2.2.2.2",
-							Ttl:   -1,
+						ZoneID: "beta.com",
+						Record: cdns.Record{
+							ID:   2,
+							Host: "ftp",
+							RecordType: cdns.RecordTypeA,
+							Record: "2.2.2.2",
+							TTL:   -1,
 						},
 					},
 					{
-						ZoneID: "zoneIDBeta",
-						Record: hdns.Record{
-							ID:   "id_3",
-							Name: "ftp",
-							Type: hdns.RecordTypeA,
-							Zone: &hdns.Zone{
-								ID:   "zoneIDBeta",
-								Name: "beta.com",
-							},
-							Value: "4.4.4.4",
-							Ttl:   -1,
+						ZoneID: "beta.com",
+						Record: cdns.Record{
+							ID:   3,
+							Host: "ftp",
+							RecordType: cdns.RecordTypeA,
+							Record: "4.4.4.4",
+							TTL:   -1,
 						},
 					},
 				},
