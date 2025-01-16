@@ -331,4 +331,4 @@ available targets.
 ## Credits
 
 This Webhook was forked and modified from the [Hetzner Webhook](https://github.com/mconfalonieri/external-dns-hetzner-webhook)
-to work with CloudDNS.
+to work with CloudDNS. The actual ClouDNS provider was taken from work by [wmarchesi123](https://github.com/wmarchesi123/external-dns/tree/cloudns).

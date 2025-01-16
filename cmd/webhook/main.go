@@ -79,7 +79,7 @@ func main() {
 	go metricsSocket.Start(nil, *socketOptions)
 
 	// Read provider configuration
-	providerConfig := &cloudns.Configuration{}
+	providerConfig := cloudns.ClouDNSConfig{}
 	if err := env.Set(providerConfig); err != nil {
 		serverStatus.SetHealthy(false)
 		log.Fatal("Provider configuration unreadable - shutting down:", err)
