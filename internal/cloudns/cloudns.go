@@ -232,7 +232,7 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 			}
 		}
 
-		if int(ep.RecordTTL) == 0 {
+		if ep.RecordTTL == endpoint.TTL(0) {
 			ep.RecordTTL = endpoint.TTL(p.defaultTTL)
 		}
 
