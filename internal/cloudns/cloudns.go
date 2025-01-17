@@ -34,6 +34,7 @@ type ClouDNSProvider struct {
 	client       *cloudns.Client
 	domainFilter endpoint.DomainFilter
 	zoneIDFilter provider.ZoneIDFilter
+	defaultTTL   int
 	ownerID      string
 	dryRun       bool
 	testing      bool
@@ -45,6 +46,7 @@ type ClouDNSConfig struct {
 	Auth         cloudns.Option
 	DomainFilter endpoint.DomainFilter
 	ZoneIDFilter provider.ZoneIDFilter
+	DefaultTTL   int
 	OwnerID      string
 	DryRun       bool
 	Testing      bool
@@ -228,6 +230,10 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 			} else {
 				log.Infof("DRY RUN: CREATE %s %s %s %s", ep.DNSName, ep.RecordType, ep.Targets[0], fmt.Sprint(ep.RecordTTL))
 			}
+		}
+
+		if int(ep.RecordTTL) == 0 {
+			ep.RecordTTL = endpoint.TTL(p.defaultTTL)
 		}
 
 		if !isValidTTL(strconv.Itoa(int(ep.RecordTTL))) && !(ep.RecordType == "TXT") {

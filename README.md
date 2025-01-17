@@ -73,16 +73,24 @@ provider:
           secretKeyRef:
             name: cloudns-credentials
             key: auth-password
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
     livenessProbe:
       httpGet:
         path: /health
-        port: http-wh-metrics
+        port: http-webhook
       initialDelaySeconds: 10
       timeoutSeconds: 5
     readinessProbe:
       httpGet:
         path: /ready
-        port: http-wh-metrics
+        port: http-webhook
       initialDelaySeconds: 10
       timeoutSeconds: 5
 
@@ -176,7 +184,7 @@ ClouDNS API.
 | CLOUDNS_AUTH_ID       | ClouDNS auth-id          | Either AUTH_ID or          |
 | CLOUDNS_AUTH_SUBID    | ClouDNS sub-auth-id      | AUTH_SUBID is required     |
 | CLOUDNS_AUTH_PASSWORD | ClouDNS auth-password    | Mandatory                  |
-| DEFAULT_TTL           | Default record TTL       | Default: `7200`            |
+| DEFAULT_TTL           | Default record TTL       | Default: `3600`            |
 
 ### Test and debug
 
