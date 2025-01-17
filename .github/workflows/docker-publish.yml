@@ -1,0 +1,32 @@
+name: Docker Publish
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+on:
+  schedule:
+    - cron: '23 11 * * *'
+  push:
+    branches: [ "main", "github-renovate/*" ]
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+
+    uses: rwunderer/renovate/.github/workflows/reusable-docker-publish.yml@main
+    with:
+      target: external-dns-cloudns-webhook
+      docker-file: ./Dockerfile
+      docker-description: External-DNS Plugin to manage ClouDNS Records
+    secrets: inherit

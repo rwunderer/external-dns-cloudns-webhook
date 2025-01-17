@@ -1,0 +1,15 @@
+# see: https://localheinz.com/articles/2022/01/24/creating-releases-with-github-actions/
+name: "Create Release"
+
+on:
+  push:
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
+
+jobs:
+  release:
+    permissions:
+      contents: write
+
+    uses: rwunderer/renovate/.github/workflows/reusable-create-release.yml@main
+    secrets: inherit
