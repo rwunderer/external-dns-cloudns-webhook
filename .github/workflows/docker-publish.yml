@@ -29,4 +29,5 @@ jobs:
       target: external-dns-cloudns-webhook
       docker-file: ./Dockerfile
       docker-description: External-DNS Plugin to manage ClouDNS Records
+      platforms: "linux/amd64"
     secrets: inherit
