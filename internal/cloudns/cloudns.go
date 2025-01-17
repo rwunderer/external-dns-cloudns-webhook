@@ -237,7 +237,7 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 		}
 
 		if !isValidTTL(strconv.Itoa(int(ep.RecordTTL))) && !(ep.RecordType == "TXT") {
-			return fmt.Errorf("invalid TTL %d for %s - must be one of '60', '300', '900', '1800', '3600', '21600', '43200', '86400', '172800', '259200', '604800', '1209600', '2592000'", ep.RecordTTL, ep.DNSName)
+			return fmt.Errorf("invalid TTL %s (still) for %s - must be one of '60', '300', '900', '1800', '3600', '21600', '43200', '86400', '172800', '259200', '604800', '1209600', '2592000'", fmt.Sprint(ep.RecordTTL), ep.DNSName)
 		}
 
 		if partLength == 2 && !(ep.RecordType == "TXT") {
