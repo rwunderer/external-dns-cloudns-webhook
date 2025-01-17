@@ -27,6 +27,6 @@ jobs:
     uses: rwunderer/renovate/.github/workflows/reusable-docker-publish.yml@main
     with:
       target: external-dns-cloudns-webhook
-      docker-file: ./Dockerfile
+      docker-file: ./package/Dockerfile
       docker-description: External-DNS Plugin to manage ClouDNS Records
     secrets: inherit
