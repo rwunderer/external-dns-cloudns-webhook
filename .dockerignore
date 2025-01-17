@@ -1,5 +1,5 @@
-Makefile
 build
-package
+Dockerfile
 deploy
 dist
+Makefile
