@@ -87,6 +87,7 @@ func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
 		client:       client,
 		domainFilter: config.DomainFilter,
 		zoneIDFilter: config.ZoneIDFilter,
+        defaultTTL:   config.DefaultTTL,
 		ownerID:      config.OwnerID,
 		dryRun:       config.DryRun,
 		testing:      config.Testing,
