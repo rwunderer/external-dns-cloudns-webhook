@@ -13,9 +13,14 @@ import (
 // From pkg/digitalocean/provider.go
 func mergeEndpointsByNameType(endpoints []*endpoint.Endpoint) []*endpoint.Endpoint {
 	endpointsByNameType := map[string][]*endpoint.Endpoint{}
+    keys := []string{}
 
 	for _, e := range endpoints {
 		key := fmt.Sprintf("%s-%s", e.DNSName, e.RecordType)
+
+        if _, ok := endpointsByNameType[key]; !ok {
+            keys = append(keys, key)
+        }
 		endpointsByNameType[key] = append(endpointsByNameType[key], e)
 	}
 
@@ -26,7 +31,8 @@ func mergeEndpointsByNameType(endpoints []*endpoint.Endpoint) []*endpoint.Endpoi
 
 	// Otherwise, construct a new list of endpoints with the endpoints merged.
 	var result []*endpoint.Endpoint
-	for _, endpoints := range endpointsByNameType {
+    for _, key := range keys {
+        endpoints := endpointsByNameType[key]
 		dnsName := endpoints[0].DNSName
 		recordType := endpoints[0].RecordType
 		ttl := endpoints[0].RecordTTL
