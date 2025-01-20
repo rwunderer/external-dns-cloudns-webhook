@@ -200,6 +200,10 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 		rootZone := rootZone(ep.DNSName)
         log.Infof("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
 
+        if rootZone != "creadomus.gmbh"  {
+            continue 
+        }
+
 		if ep.RecordType == "TXT" {
 			if !p.dryRun {
 				if partLength == 2 && dnsParts[0][0:2] == "a-" {
