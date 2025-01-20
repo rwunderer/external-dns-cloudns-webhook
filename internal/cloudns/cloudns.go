@@ -198,6 +198,7 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 		dnsParts := strings.Split(ep.DNSName, ".")
 		partLength := len(dnsParts)
 		rootZone := rootZone(ep.DNSName)
+        log.Infof("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
 
 		if ep.RecordType == "TXT" {
 			if !p.dryRun {
