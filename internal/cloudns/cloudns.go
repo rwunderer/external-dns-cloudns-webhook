@@ -16,6 +16,7 @@ package cloudns
 import (
 	"context"
 	"fmt"
+    "slices"
 	"strconv"
 	"strings"
 
@@ -221,8 +222,17 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 		rootZone := rootZone(ep.DNSName)
         log.Infof("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
 
-        if rootZone != "creadomus.gmbh"  {
-            continue 
+	    zones, err := listZones(p, ctx)
+        if err != nil {
+            return err
+        }
+
+        idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
+            return z.Name == rootZone
+        })
+        if idx < 0 {
+            log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
+            continue
         }
 
 		if ep.RecordType == "TXT" {
@@ -326,6 +336,19 @@ func (p *ClouDNSProvider) deleteRecords(ctx context.Context, endpoints []*endpoi
 		} else {
 			hostName = removeRootZone(ep.DNSName, rootZone)
 		}
+
+	    zones, err := listZones(p, ctx)
+        if err != nil {
+            return err
+        }
+
+        idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
+            return z.Name == rootZone
+        })
+        if idx < 0 {
+            log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
+            continue
+        }
 
 		for _, target := range ep.Targets {
 
