@@ -332,7 +332,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    map[string]cloudns.RecordMap{},
 			expectingError: false,
 			mockFunc: func() {
-				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
 					return []cloudns.Zone{}, nil
 				}
 
@@ -346,7 +346,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    map[string]cloudns.RecordMap{},
 			expectingError: false,
 			mockFunc: func() {
-				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones, nil
 				}
 
@@ -360,7 +360,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    nil,
 			expectingError: true,
 			mockFunc: func() {
-				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
 					return nil, fmt.Errorf("list zones error")
 				}
 			},
@@ -370,7 +370,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    nil,
 			expectingError: true,
 			mockFunc: func() {
-				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones, nil
 				}
 
@@ -384,7 +384,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    oneZoneRecordMap,
 			expectingError: false,
 			mockFunc: func() {
-				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones[0:1], nil
 				}
 
@@ -398,7 +398,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    twoZoneRecordMap,
 			expectingError: false,
 			mockFunc: func() {
-				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones, nil
 				}
 

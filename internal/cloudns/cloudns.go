@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"external-dns-cloudns-webhook/internal/metrics"
+
 	cloudns "github.com/ppmathis/cloudns-go"
 
 	log "github.com/sirupsen/logrus"
@@ -52,8 +54,27 @@ type ClouDNSConfig struct {
 	Testing      bool
 }
 
-var listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
-	return client.Zones.List(ctx)
+var listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
+    client := p.client
+	metrics := metrics.GetOpenMetricsInstance()
+	result := []cloudns.Zone{}
+
+	zones, err :=  client.Zones.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredOutZones := 0
+	for _, zone := range zones {
+		if p.domainFilter.Match(zone.Name) {
+			result = append(result, zone)
+		} else {
+			filteredOutZones++
+		}
+	}
+	metrics.SetFilteredOutZones(filteredOutZones)
+
+	return result, nil
 }
 
 var listRecords = func(client *cloudns.Client, ctx context.Context, zoneName string) (cloudns.RecordMap, error) {
@@ -104,7 +125,7 @@ func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 
 	var endpoints []*endpoint.Endpoint
 
-	zones, err := listZones(p.client, ctx)
+	zones, err := listZones(p, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting zones: %s", err)
 	}
@@ -396,7 +417,7 @@ func (p *ClouDNSProvider) recordFromTarget(ctx context.Context, ep *endpoint.End
 func (p *ClouDNSProvider) zoneRecordMap(ctx context.Context) (map[string]cloudns.RecordMap, error) {
 	zoneRecordMap := make(map[string]cloudns.RecordMap)
 
-	zones, err := listZones(p.client, ctx)
+	zones, err := listZones(p, ctx)
 	if err != nil {
 		return nil, err
 	}
