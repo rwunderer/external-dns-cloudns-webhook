@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+    "regexp"
 	"testing"
 
 	"github.com/codingconcepts/env"
 	cloudns "github.com/ppmathis/cloudns-go"
+
+	"sigs.k8s.io/external-dns/endpoint"
 )
 
 // var mockProvider = &ClouDNSProvider{}
@@ -305,6 +308,92 @@ func makeConfig() error {
 	return nil
 }
 
+func TestZoneFilter(t *testing.T) {
+    zoneOne := mockZones[0]
+    zoneTwo := mockZones[1]
+
+	tests := []struct {
+		name           string
+        domainFilter   endpoint.DomainFilter
+		expectedZones  []cloudns.Zone
+		expectingError bool
+	}{
+		{
+			name:           "all zones",
+		    domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{""}, []string{""}),
+			expectedZones:   []cloudns.Zone{zoneOne, zoneTwo},
+			expectingError: false,
+		},
+        {
+			name:           "only test1, simple filter",
+		    domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{"test1.com"}, []string{""}),
+			expectedZones:   []cloudns.Zone{zoneOne},
+			expectingError: false,
+		},
+        {
+			name:           "only test2, with test1 excluded",
+		    domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{}, []string{"test1.com"}),
+			expectedZones:   []cloudns.Zone{zoneTwo},
+			expectingError: false,
+		},
+		{
+			name:           "all zones, with regexp",
+            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile("test[12].com"), regexp.MustCompile("")),
+			expectedZones:   []cloudns.Zone{zoneOne, zoneTwo},
+			expectingError: false,
+		},
+        {
+			name:           "only test1, with regexp",
+            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile("test1\\..*"), regexp.MustCompile("")),
+			expectedZones:   []cloudns.Zone{zoneOne},
+			expectingError: false,
+		},
+        {
+			name:           "only test2, with exclusion regexp",
+            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile(""), regexp.MustCompile("test1\\..*")),
+			expectedZones:   []cloudns.Zone{zoneTwo},
+			expectingError: false,
+		},
+        {
+			name:           "only test2, with two regexp",
+            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile(".*\\.com"), regexp.MustCompile("test1\\..*")),
+			expectedZones:   []cloudns.Zone{zoneTwo},
+			expectingError: false,
+		},
+        {
+			name:           "no zones, with non-matching regexp",
+            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile(".*\\.net"), regexp.MustCompile("")),
+			expectedZones:   []cloudns.Zone{},
+			expectingError: false,
+		},
+    }
+
+	oriListZones := listZones
+    listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+        return mockZones, nil
+    }
+
+	provider := &ClouDNSProvider{}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+            provider.domainFilter = test.domainFilter
+			zones, err := provider.Zones(context.Background())
+
+			errExist := err != nil
+			if test.expectingError != errExist {
+				tt.Errorf("Expected error: %v, got: %v", test.expectingError, errExist)
+			}
+
+			if !reflect.DeepEqual(test.expectedZones, zones) {
+				tt.Errorf("Error, return value expectation. Want: %+v, got: %+v", test.expectedZones, zones)
+			}
+		})
+	}
+
+	listZones = oriListZones
+}
+
 // func Test_Records(t *testing.T)
 func TestZoneRecordMap(t *testing.T) {
 	zoneOneRecordMap := make(cloudns.RecordMap)
@@ -335,7 +424,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    map[string]cloudns.RecordMap{},
 			expectingError: false,
 			mockFunc: func() {
-                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
+				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
 					return []cloudns.Zone{}, nil
 				}
 
@@ -349,7 +438,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    map[string]cloudns.RecordMap{},
 			expectingError: false,
 			mockFunc: func() {
-                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
+				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones, nil
 				}
 
@@ -363,7 +452,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    nil,
 			expectingError: true,
 			mockFunc: func() {
-                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
+				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
 					return nil, fmt.Errorf("list zones error")
 				}
 			},
@@ -373,7 +462,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    nil,
 			expectingError: true,
 			mockFunc: func() {
-                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
+				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones, nil
 				}
 
@@ -387,7 +476,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    oneZoneRecordMap,
 			expectingError: false,
 			mockFunc: func() {
-                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
+				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones[0:1], nil
 				}
 
@@ -401,7 +490,7 @@ func TestZoneRecordMap(t *testing.T) {
 			expectedMap:    twoZoneRecordMap,
 			expectingError: false,
 			mockFunc: func() {
-                listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
+				listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
 					return mockZones, nil
 				}
 

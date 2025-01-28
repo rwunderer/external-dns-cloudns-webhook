@@ -55,27 +55,8 @@ type ClouDNSConfig struct {
 	Testing      bool
 }
 
-var listZones = func(p *ClouDNSProvider, ctx context.Context) ([]cloudns.Zone, error) {
-    client := p.client
-	metrics := metrics.GetOpenMetricsInstance()
-	result := []cloudns.Zone{}
-
-	zones, err :=  client.Zones.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	filteredOutZones := 0
-	for _, zone := range zones {
-		if p.domainFilter.Match(zone.Name) {
-			result = append(result, zone)
-		} else {
-			filteredOutZones++
-		}
-	}
-	metrics.SetFilteredOutZones(filteredOutZones)
-
-	return result, nil
+var listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+    return client.Zones.List(ctx)
 }
 
 var listRecords = func(client *cloudns.Client, ctx context.Context, zoneName string) (cloudns.RecordMap, error) {
@@ -118,6 +99,30 @@ func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
 	return provider, nil
 }
 
+// Zones retrieves the DNS zone from the ClouDNS provider,
+// applies the defined domainFilter and returns the result
+func (p *ClouDNSProvider) Zones (ctx context.Context) ([]cloudns.Zone, error) {
+	metrics := metrics.GetOpenMetricsInstance()
+	result := []cloudns.Zone{}
+
+	zones, err := listZones(p.client, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredOutZones := 0
+	for _, zone := range zones {
+		if p.domainFilter.Match(zone.Name) {
+			result = append(result, zone)
+		} else {
+			filteredOutZones++
+		}
+	}
+	metrics.SetFilteredOutZones(filteredOutZones)
+
+	return result, nil
+}
+
 // Records retrieves the DNS records from the CloudDNS provider and returns them as a slice of endpoint.Endpoint structs.
 // The function retrieves all zones and their corresponding records and filters out unsupported record types.
 // If an error occurs while retrieving the zones or records, it is returned.
@@ -126,7 +131,7 @@ func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 
 	var endpoints []*endpoint.Endpoint
 
-	zones, err := listZones(p, ctx)
+	zones, err := p.Zones(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting zones: %s", err)
 	}
@@ -222,7 +227,7 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 		rootZone := rootZone(ep.DNSName)
         log.Infof("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
 
-	    zones, err := listZones(p, ctx)
+	    zones, err := p.Zones(ctx)
         if err != nil {
             return err
         }
@@ -337,7 +342,7 @@ func (p *ClouDNSProvider) deleteRecords(ctx context.Context, endpoints []*endpoi
 			hostName = removeRootZone(ep.DNSName, rootZone)
 		}
 
-	    zones, err := listZones(p, ctx)
+	    zones, err := p.Zones(ctx)
         if err != nil {
             return err
         }
@@ -440,7 +445,7 @@ func (p *ClouDNSProvider) recordFromTarget(ctx context.Context, ep *endpoint.End
 func (p *ClouDNSProvider) zoneRecordMap(ctx context.Context) (map[string]cloudns.RecordMap, error) {
 	zoneRecordMap := make(map[string]cloudns.RecordMap)
 
-	zones, err := listZones(p, ctx)
+    zones, err := p.Zones(ctx)
 	if err != nil {
 		return nil, err
 	}
