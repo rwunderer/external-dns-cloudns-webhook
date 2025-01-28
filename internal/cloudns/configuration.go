@@ -32,9 +32,9 @@ import (
 
 // Configuration contains the ClouDNS provider's configuration.
 type Configuration struct {
-	Authid               int      `env:"CLOUDNS_AUTH_ID" default:"0"`
-	Authsubid            int      `env:"CLOUDNS_AUTH_SUBID" default:"0"`
-	Authpassword         string   `env:"CLOUDNS_AUTH_PASSWORD" required:"true"`
+	AuthIDType           string   `env:"CLOUDNS_AUTH_ID_TYPE" default:"auth-id"`
+	AuthID               int      `env:"CLOUDNS_AUTH_ID" required:"true"`
+	AuthPassword         string   `env:"CLOUDNS_AUTH_PASSWORD" required:"true"`
 	DryRun               bool     `env:"DRY_RUN" default:"false"`
 	Debug                bool     `env:"CLOUDNS_DEBUG" default:"false"`
 	BatchSize            int      `env:"BATCH_SIZE" default:"100"`
@@ -93,12 +93,12 @@ func GetDomainFilter(config Configuration) endpoint.DomainFilter {
 func GetAuth(config Configuration) (cloudns.Option, error) {
 	var auth cloudns.Option
 
-	if config.Authid != 0 {
-		auth = cloudns.AuthUserID(config.Authid, config.Authpassword)
-	} else if config.Authsubid != 0 {
-		auth = cloudns.AuthSubUserID(config.Authsubid, config.Authpassword)
+	if config.AuthIDType == "auth-id" {
+		auth = cloudns.AuthUserID(config.AuthID, config.AuthPassword)
+	} else if config.AuthIDType == "sub-auth-id" {
+		auth = cloudns.AuthSubUserID(config.AuthID, config.AuthPassword)
 	} else {
-		return nil, fmt.Errorf("neither CLOUDNS_AUTH_ID nor CLOUDNS_AUTH_SUBID was set")
+		return nil, fmt.Errorf("CLOUDNS_AUTH_ID_TYPE is not valid. Expected one of 'auth-id' or 'sub-auth-id' but was: '%s'", config.AuthIDType)
 	}
 
 	return auth, nil

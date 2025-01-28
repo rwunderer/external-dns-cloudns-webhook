@@ -206,37 +206,40 @@ var expectedEndpointsOne = []*endpoint.Endpoint{
 func TestNewClouDNSProvider(t *testing.T) {
 	tests := []struct {
 		name             string
+		userIDType       string
 		userID           string
-		subUserID        string
 		subUserName      string
 		userPassword     string
 		expectedError    string
 		expectedErrorNil bool
 	}{
 		{
-			name:          "valid user-id login type",
+			name:          "valid user-id login",
 			userID:        "12345",
 			userPassword:  "password",
 			expectedError: "",
 		},
 		{
-			name:             "invalid user-id login type",
+			name:             "invalid user-id login",
+            userIDType:       "auth-id",
 			userID:           "invalid",
 			userPassword:     "password",
-			expectedError:    "error setting \"Authid\": strconv.ParseInt: parsing \"invalid\": invalid syntax",
+			expectedError:    "error setting \"AuthID\": strconv.ParseInt: parsing \"invalid\": invalid syntax",
 			expectedErrorNil: false,
 		},
 		{
 			name:          "valid sub-user login type",
-			subUserID:     "12345",
+            userIDType:    "sub-auth-id",
+			userID:        "12345",
 			userPassword:  "password",
 			expectedError: "",
 		},
 		{
-			name:             "invalid sub-user login type",
-			subUserID:        "invalid",
+			name:             "invalid login type",
+            userIDType:       "invalid",
+			userID:           "12345",
 			userPassword:     "password",
-			expectedError:    "error setting \"Authsubid\": strconv.ParseInt: parsing \"invalid\": invalid syntax",
+			expectedError:    "CLOUDNS_AUTH_ID_TYPE is not valid. Expected one of 'auth-id' or 'sub-auth-id' but was: 'invalid'",
 			expectedErrorNil: false,
 		},
 		{
@@ -247,7 +250,7 @@ func TestNewClouDNSProvider(t *testing.T) {
 		{
 			name:          "missing user id sub-user",
 			userPassword:  "password",
-			expectedError: "neither CLOUDNS_AUTH_ID nor CLOUDNS_AUTH_SUBID was set",
+			expectedError: "CLOUDNS_AUTH_ID environment configuration was missing",
 		},
 	}
 
@@ -258,10 +261,10 @@ func TestNewClouDNSProvider(t *testing.T) {
 			} else {
 				os.Unsetenv("CLOUDNS_AUTH_ID")
 			}
-			if test.subUserID != "" {
-				os.Setenv("CLOUDNS_AUTH_SUBID", test.subUserID)
+			if test.userIDType != "" {
+				os.Setenv("CLOUDNS_AUTH_ID_TYPE", test.userIDType)
 			} else {
-				os.Unsetenv("CLOUDNS_AUTH_SUBID")
+				os.Unsetenv("CLOUDNS_AUTH_ID_TYPE")
 			}
 			if test.userPassword != "" {
 				os.Setenv("CLOUDNS_AUTH_PASSWORD", test.userPassword)
