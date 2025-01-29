@@ -9,13 +9,22 @@
   "packageRules": [
     {
       "matchManagers": [
-        "gomod",
-        "golang"
+        "gomod"
       ],
-      "groupName": "golang",
+      "groupName": "go-modules",
       "postUpdateOptions": [
         "gomodUpdateImportPaths",
         "gomodTidy"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "addLabels": [
+        "renovate_publish"
+      ]
+    },
+    {
+      "matchDepNames": [
+        "golang"
       ],
       "automerge": true,
       "automergeType": "pr",
