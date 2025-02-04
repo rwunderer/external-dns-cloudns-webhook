@@ -2,7 +2,7 @@ module external-dns-cloudns-webhook
 
 go 1.23.3
 
-toolchain go1.23.5
+toolchain go1.23.6
 
 require (
 	github.com/codingconcepts/env v0.0.0-20240618133406-5b0845441187
