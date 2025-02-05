@@ -39,6 +39,7 @@ type ClouDNSProvider struct {
 	zoneIDFilter provider.ZoneIDFilter
 	defaultTTL   int
 	ownerID      string
+    debug        bool
 	dryRun       bool
 	testing      bool
 }
@@ -51,6 +52,7 @@ type ClouDNSConfig struct {
 	ZoneIDFilter provider.ZoneIDFilter
 	DefaultTTL   int
 	OwnerID      string
+    Debug        bool
 	DryRun       bool
 	Testing      bool
 }
@@ -79,6 +81,14 @@ var deleteRecord = func(client *cloudns.Client, ctx context.Context, zoneName st
 // The function authenticates with the CloudDNS service using the login type, user or sub-user ID, and user password specified in the environment variables.
 // If an error occurs while authenticating or creating the ClouDNS client, it is returned.
 func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
+	var logLevel log.Level
+	if config.Debug {
+		logLevel = log.DebugLevel
+	} else {
+		logLevel = log.InfoLevel
+	}
+	log.SetLevel(logLevel)
+
 	log.Info("Creating ClouDNS Provider")
 
 	client, error := cloudns.New(config.Auth)
@@ -92,6 +102,7 @@ func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
 		zoneIDFilter: config.ZoneIDFilter,
         defaultTTL:   config.DefaultTTL,
 		ownerID:      config.OwnerID,
+        debug:        config.Debug
 		dryRun:       config.DryRun,
 		testing:      config.Testing,
 	}
@@ -177,7 +188,7 @@ func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 			out = out + " [" + e.DNSName + " " + e.RecordType + " " + e.Targets[0] + " " + fmt.Sprint(e.RecordTTL) + "]"
 		}
 	}
-	log.Infof("%s", out)
+	log.Debugf("%s", out)
 
 	return merged, nil
 }
@@ -225,7 +236,7 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 		dnsParts := strings.Split(ep.DNSName, ".")
 		partLength := len(dnsParts)
 		rootZone := rootZone(ep.DNSName)
-        log.Infof("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
+        log.Debugf("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
 
 	    zones, err := p.Zones(ctx)
         if err != nil {

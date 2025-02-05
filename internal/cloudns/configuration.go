@@ -118,5 +118,6 @@ func (c *Configuration) ProviderConfig() (*ClouDNSConfig, error) {
 		DefaultTTL:   c.DefaultTTL,
 		OwnerID:      c.OwnerID,
 		DryRun:       c.DryRun,
+        Debug:        c.Debug,
 	}, nil
 }
