@@ -19,6 +19,7 @@ import (
     "slices"
 	"strconv"
 	"strings"
+    "time"
 
 	"external-dns-cloudns-webhook/internal/metrics"
 
@@ -28,6 +29,14 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 	"sigs.k8s.io/external-dns/provider"
+)
+
+const (
+	actGetZones     = "get_zones"
+	actGetRecords   = "get_records"
+	actCreateRecord = "create_record"
+	actUpdateRecord = "update_record"
+	actDeleteRecord = "delete_record"
 )
 
 // ClouDNSProvider is a struct representing a CloudDNS provider.
@@ -57,23 +66,71 @@ type ClouDNSConfig struct {
 }
 
 var listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
-    return client.Zones.List(ctx)
+	metrics := metrics.GetOpenMetricsInstance()
+    start := time.Now()
+
+    result, err := client.Zones.List(ctx)
+    if err != nil {
+        metrics.IncFailedApiCallsTotal(actGetZones)
+        return nil, err
+    }
+
+    delay := time.Since(start)
+    metrics.IncSuccessfulApiCallsTotal(actGetZones)
+    metrics.AddApiDelayHist(actGetZones, delay.Milliseconds())
+
+    return result, nil
 }
 
 var listRecords = func(client *cloudns.Client, ctx context.Context, zoneName string) (cloudns.RecordMap, error) {
-	return client.Records.List(ctx, zoneName)
+	metrics := metrics.GetOpenMetricsInstance()
+    start := time.Now()
+
+	result, err := client.Records.List(ctx, zoneName)
+    if err != nil {
+        metrics.IncFailedApiCallsTotal(actGetRecords)
+        return nil, err
+    }
+
+    delay := time.Since(start)
+    metrics.IncSuccessfulApiCallsTotal(actGetRecords)
+    metrics.AddApiDelayHist(actGetRecords, delay.Milliseconds())
+
+    return result, nil
 }
 
 var createRecord = func(client *cloudns.Client, ctx context.Context, zoneName string, record cloudns.Record) error {
-	_, err := client.Records.Create(ctx, zoneName, record)
+	metrics := metrics.GetOpenMetricsInstance()
+    start := time.Now()
 
-	return err
+	_, err := client.Records.Create(ctx, zoneName, record)
+    if err != nil {
+        metrics.IncFailedApiCallsTotal(actCreateRecord)
+        return err
+    }
+
+    delay := time.Since(start)
+    metrics.IncSuccessfulApiCallsTotal(actCreateRecord)
+    metrics.AddApiDelayHist(actCreateRecord, delay.Milliseconds())
+
+	return nil
 }
 
 var deleteRecord = func(client *cloudns.Client, ctx context.Context, zoneName string, recordID int) error {
-	_, err := client.Records.Delete(ctx, zoneName, recordID)
+	metrics := metrics.GetOpenMetricsInstance()
+    start := time.Now()
 
-	return err
+	_, err := client.Records.Delete(ctx, zoneName, recordID)
+    if err != nil {
+        metrics.IncFailedApiCallsTotal(actDeleteRecord)
+        return err
+    }
+
+    delay := time.Since(start)
+    metrics.IncSuccessfulApiCallsTotal(actDeleteRecord)
+    metrics.AddApiDelayHist(actDeleteRecord, delay.Milliseconds())
+
+	return nil
 }
 
 // NewClouDNSProvider creates and returns a new ClouDNSProvider struct based on the given configuration.
@@ -100,7 +157,7 @@ func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
 		domainFilter: config.DomainFilter,
         defaultTTL:   config.DefaultTTL,
 		ownerID:      config.OwnerID,
-        debug:        config.Debug
+        debug:        config.Debug,
 		dryRun:       config.DryRun,
 		testing:      config.Testing,
 	}
@@ -152,6 +209,8 @@ func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 			return nil, fmt.Errorf("error getting records: %s", err)
 		}
 
+		skippedRecords := 0
+		// Add only endpoints from supported types.
 		for _, record := range records {
 			if provider.SupportedRecordType(string(record.RecordType)) {
 				name := ""
@@ -174,8 +233,12 @@ func (p *ClouDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 					endpoint.TTL(record.TTL),
 					record.Record,
 				))
+			} else {
+				skippedRecords++
 			}
 		}
+		m := metrics.GetOpenMetricsInstance()
+		m.SetSkippedRecords(zone.Name, skippedRecords)
 	}
 
 	merged := mergeEndpointsByNameType(endpoints)
