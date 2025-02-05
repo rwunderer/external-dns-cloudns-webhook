@@ -10,7 +10,7 @@ endif
 ARTIFACT_NAME = external-dns-cloudns-webhook
 
 
-REGISTRY ?= docker.io/rwunderer
+REGISTRY ?= ghcr.io/rwunderer
 IMAGE_NAME ?= external-dns-cloudns-webhook
 IMAGE_TAG ?= localbuild
 IMAGE = $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
@@ -84,26 +84,28 @@ docker-build: build ## Build the default docker image
 .PHONY: docker-build-arm64
 docker-build-arm64: build-arm64 ## Build the docker image for ARM64
 	docker build . \
-		-f docker/localbuild.arm64.Dockerfile
+        --platform linux/arm64 \
+		-f docker/localbuild.Dockerfile \
 		-t $(IMAGE)-arm64
 
 .PHONY: docker-build-amd64
 docker-build-amd64: build-amd64 ## Build the docker image for AMD64
 	docker build . \
-		-f docker/localbuild.amd64.Dockerfile \
+        --platform linux/amd64 \
+		-f docker/localbuild.Dockerfile \
 		-t $(IMAGE)-amd64
 
 .PHONY: docker-build-multiarch
-docker-build-multiarch: docker-build-arm64 docker-build-amd64 ## Build docker images for ARM64 and AMD64
-	docker manifest rm $(IMAGE); \
-	docker manifest create $(IMAGE) \
-		--amend $(IMAGE)-amd64 \
-		--amend $(IMAGE)-arm64
+docker-build-multiarch: build-arm64 build-amd64 ## Build and push docker multiarch image for ARM64 and AMD64
+	docker buildx build . \
+        --push \
+        --platform linux/amd64,linux/arm64 \
+		-f docker/localbuild.Dockerfile \
+		-t $(IMAGE)
 
 .PHONY: docker-push
 docker-push: ## Push the local docker image
 	docker push $(IMAGE)
-577c8ee06f39: Layer already exists 
 
 .PHONY: docker-push-arm64
 docker-push-arm64: ## Push the docker image for ARM64
@@ -112,13 +114,6 @@ docker-push-arm64: ## Push the docker image for ARM64
 .PHONY: docker-push-amd64
 docker-push-amd64: ## Push the docker image for AMD64
 	docker push $(IMAGE)-amd64
-
-.PHONY: docker-push-multiarch
-docker-push-multiarch: docker-push-arm64 docker-push-amd64 ## Push the docker multiarch manifest
-	docker manifest push $(IMAGE)
-
-.PHONY: docker-multiarch-all
-docker-multiarch-all: docker-build-multiarch docker-push-multiarch ## Build and push multiarch images and tag
 
 ##@ Test
 
