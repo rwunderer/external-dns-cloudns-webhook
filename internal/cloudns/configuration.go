@@ -27,7 +27,6 @@ import (
 	"github.com/codingconcepts/env"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/external-dns/endpoint"
-	"sigs.k8s.io/external-dns/provider"
 )
 
 // Configuration contains the ClouDNS provider's configuration.
@@ -112,7 +111,6 @@ func (c *Configuration) ProviderConfig() (*ClouDNSConfig, error) {
 	return &ClouDNSConfig{
 		Auth:         auth,
 		DomainFilter: GetDomainFilter(*c),
-		ZoneIDFilter: provider.NewZoneIDFilter([]string{}),
 		DefaultTTL:   c.DefaultTTL,
 		DryRun:       c.DryRun,
         Debug:        c.Debug,

@@ -36,7 +36,6 @@ type ClouDNSProvider struct {
 	provider.BaseProvider
 	client       *cloudns.Client
 	domainFilter endpoint.DomainFilter
-	zoneIDFilter provider.ZoneIDFilter
 	defaultTTL   int
 	ownerID      string
     debug        bool
@@ -99,7 +98,6 @@ func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
 	provider := &ClouDNSProvider{
 		client:       client,
 		domainFilter: config.DomainFilter,
-		zoneIDFilter: config.ZoneIDFilter,
         defaultTTL:   config.DefaultTTL,
 		ownerID:      config.OwnerID,
         debug:        config.Debug
