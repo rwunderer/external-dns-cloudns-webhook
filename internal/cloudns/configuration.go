@@ -37,9 +37,7 @@ type Configuration struct {
 	AuthPassword         string   `env:"CLOUDNS_AUTH_PASSWORD" required:"true"`
 	DryRun               bool     `env:"DRY_RUN" default:"false"`
 	Debug                bool     `env:"CLOUDNS_DEBUG" default:"false"`
-	BatchSize            int      `env:"BATCH_SIZE" default:"100"`
 	DefaultTTL           int      `env:"DEFAULT_TTL" default:"3600"`
-	OwnerID              string   `env:"OWNER_ID" default:""`
 	DomainFilter         []string `env:"DOMAIN_FILTER" default:""`
 	ExcludeDomains       []string `env:"EXCLUDE_DOMAIN_FILTER" default:""`
 	RegexDomainFilter    string   `env:"REGEXP_DOMAIN_FILTER" default:""`
@@ -116,7 +114,6 @@ func (c *Configuration) ProviderConfig() (*ClouDNSConfig, error) {
 		DomainFilter: GetDomainFilter(*c),
 		ZoneIDFilter: provider.NewZoneIDFilter([]string{}),
 		DefaultTTL:   c.DefaultTTL,
-		OwnerID:      c.OwnerID,
 		DryRun:       c.DryRun,
         Debug:        c.Debug,
 	}, nil
