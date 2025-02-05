@@ -33,7 +33,10 @@ Here are provided examples using the
 In either case, a secret that stores the CloudDNS auth info is required:
 
 ```yaml
-kubectl create secret generic cloudns-credentials --from-literal=auth-id='<EXAMPLE_PLEASE_REPLACE>' --from-literal=auth-password='<EXAMPLE_PLEASE_REPLACE>' -n external-dns
+kubectl create secret generic cloudns-config -n external-dns \
+  --from-literal=CLOUDNS_AUTH_ID_TYPE=auth-id \
+  --from-literal=CLOUDNS_AUTH_ID='<EXAMPLE_PLEASE_REPLACE>' \
+  --from-literal=CLOUDNS_AUTH_PASSWORD='<EXAMPLE_PLEASE_REPLACE>'
 ```
 
 ### Using the ExternalDNS chart
