@@ -26,6 +26,7 @@
       "matchDepNames": [
         "golang"
       ],
+      "groupName": "go-modules",
       "automerge": true,
       "automergeType": "pr",
       "addLabels": [
