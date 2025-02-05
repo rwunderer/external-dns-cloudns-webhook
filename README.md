@@ -63,16 +63,21 @@ provider:
       repository: ghcr.io/rwunderer/external-dns-cloudns-webhook
       tag: v0.1.0
     env:
-      - name: CLOUDNS_AUTH_ID
-        valueFrom:
-          secretKeyRef:
-            name: cloudns-credentials
-            key: auth-id
-      - name: CLOUDNS_AUTH_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: cloudns-credentials
-            key: auth-password
+    - name: CLOUDNS_AUTH_ID_TYPE
+      valueFrom:
+        secretKeyRef:
+          name: cloudns-config
+          key: CLOUDNS_AUTH_ID_TYPE
+    - name: CLOUDNS_AUTH_ID
+      valueFrom:
+        secretKeyRef:
+          name: cloudns-config
+          key: CLOUDNS_AUTH_ID
+    - name: CLOUDNS_AUTH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: cloudns-config
+          key: CLOUDNS_AUTH_PASSWORD
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -150,16 +155,21 @@ sidecars:
       initialDelaySeconds: 10
       timeoutSeconds: 5
     env:
-      - name: CLOUDNS_AUTH_ID
-        valueFrom:
-          secretKeyRef:
-            name: cloudns-credentials
-            key: auth-id
-      - name: CLOUDNS_AUTH_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: cloudns-credentials
-            key: auth-password
+    - name: CLOUDNS_AUTH_ID_TYPE
+      valueFrom:
+        secretKeyRef:
+          name: cloudns-config
+          key: CLOUDNS_AUTH_ID_TYPE
+    - name: CLOUDNS_AUTH_ID
+      valueFrom:
+        secretKeyRef:
+          name: cloudns-config
+          key: CLOUDNS_AUTH_ID
+    - name: CLOUDNS_AUTH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: cloudns-config
+          key: CLOUDNS_AUTH_PASSWORD
 ```
 
 And then:
@@ -179,12 +189,12 @@ The following environment variables can be used for configuring the application.
 These variables control the behavior of the webhook when interacting with
 ClouDNS API.
 
-| Variable              | Description              | Notes                      |
-| --------------------- | -------------------------| -------------------------- |
-| CLOUDNS_AUTH_ID       | ClouDNS auth-id          | Either AUTH_ID or          |
-| CLOUDNS_AUTH_SUBID    | ClouDNS sub-auth-id      | AUTH_SUBID is required     |
-| CLOUDNS_AUTH_PASSWORD | ClouDNS auth-password    | Mandatory                  |
-| DEFAULT_TTL           | Default record TTL       | Default: `3600`            |
+| Variable              | Description                       | Notes                      |
+| --------------------- | ----------------------------------| -------------------------- |
+| CLOUDNS_AUTH_ID_TYPE  | either `auth-id` or `sub-auth-id` | Default: `auth-id`         |
+| CLOUDNS_AUTH_ID       | ClouDNS auth-id or sub-auth-id    | Mandatory                  |
+| CLOUDNS_AUTH_PASSWORD | ClouDNS auth-password             | Mandatory                  |
+| DEFAULT_TTL           | Default record TTL                | Default: `3600`            |
 
 ### Test and debug
 
