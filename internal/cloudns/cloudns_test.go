@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-    "regexp"
+	"regexp"
 	"testing"
 
 	"github.com/codingconcepts/env"
@@ -119,76 +119,76 @@ var mockRecords = [][]cloudns.Record{
 
 /*
 var expectedEndpointsOne = []*endpoint.Endpoint{
-	// endpoint 1
-	endpoint.NewEndpointWithTTL(
-		"test1.com",
-		"A",
-		endpoint.TTL(60),
-		"1.1.1.1",
-	),
-	// endpoint 2
-	endpoint.NewEndpointWithTTL(
-		"sub2.test1.com",
-		"A",
-		endpoint.TTL(60),
-		"2.2.2.2",
-	),
-	// endpoint 3
-	endpoint.NewEndpointWithTTL(
-		"sub3.test1.com",
-		"A",
-		endpoint.TTL(60),
-		"3.3.3.3",
-	),
-	// endpoint 4
-	endpoint.NewEndpointWithTTL(
-		"test1.com",
-		"TXT",
-		endpoint.TTL(60),
-		"TextRecord",
-	),
-	// endpoint 5
-	endpoint.NewEndpointWithTTL(
-		"sub5.test1.com",
-		"TXT",
-		endpoint.TTL(60),
-		"SubTextRecord",
-	),
-	// endpoint 6
-	endpoint.NewEndpointWithTTL(
-		"test2.com",
-		"A",
-		endpoint.TTL(60),
-		"6.6.6.6",
-	),
-	// endpoint 7
-	endpoint.NewEndpointWithTTL(
-		"sub7.test2.com",
-		"A",
-		endpoint.TTL(60),
-		"7.7.7.7",
-	),
-	// endpoint 8
-	endpoint.NewEndpointWithTTL(
-		"sub8.test2.com",
-		"A",
-		endpoint.TTL(60),
-		"8.8.8.8",
-	),
-	// endpoint 9
-	endpoint.NewEndpointWithTTL(
-		"test2.com",
-		"TXT",
-		endpoint.TTL(60),
-		"TextRecord",
-	),
-	// endpoint 10
-	endpoint.NewEndpointWithTTL(
-		"sub5.test2.com",
-		"TXT",
-		endpoint.TTL(60),
-		"SubTextRecord",
-	),
+    // endpoint 1
+    endpoint.NewEndpointWithTTL(
+        "test1.com",
+        "A",
+        endpoint.TTL(60),
+        "1.1.1.1",
+    ),
+    // endpoint 2
+    endpoint.NewEndpointWithTTL(
+        "sub2.test1.com",
+        "A",
+        endpoint.TTL(60),
+        "2.2.2.2",
+    ),
+    // endpoint 3
+    endpoint.NewEndpointWithTTL(
+        "sub3.test1.com",
+        "A",
+        endpoint.TTL(60),
+        "3.3.3.3",
+    ),
+    // endpoint 4
+    endpoint.NewEndpointWithTTL(
+        "test1.com",
+        "TXT",
+        endpoint.TTL(60),
+        "TextRecord",
+    ),
+    // endpoint 5
+    endpoint.NewEndpointWithTTL(
+        "sub5.test1.com",
+        "TXT",
+        endpoint.TTL(60),
+        "SubTextRecord",
+    ),
+    // endpoint 6
+    endpoint.NewEndpointWithTTL(
+        "test2.com",
+        "A",
+        endpoint.TTL(60),
+        "6.6.6.6",
+    ),
+    // endpoint 7
+    endpoint.NewEndpointWithTTL(
+        "sub7.test2.com",
+        "A",
+        endpoint.TTL(60),
+        "7.7.7.7",
+    ),
+    // endpoint 8
+    endpoint.NewEndpointWithTTL(
+        "sub8.test2.com",
+        "A",
+        endpoint.TTL(60),
+        "8.8.8.8",
+    ),
+    // endpoint 9
+    endpoint.NewEndpointWithTTL(
+        "test2.com",
+        "TXT",
+        endpoint.TTL(60),
+        "TextRecord",
+    ),
+    // endpoint 10
+    endpoint.NewEndpointWithTTL(
+        "sub5.test2.com",
+        "TXT",
+        endpoint.TTL(60),
+        "SubTextRecord",
+    ),
 }
 */
 
@@ -224,7 +224,7 @@ func TestNewClouDNSProvider(t *testing.T) {
 		},
 		{
 			name:             "invalid user-id login",
-            userIDType:       "auth-id",
+			userIDType:       "auth-id",
 			userID:           "invalid",
 			userPassword:     "password",
 			expectedError:    "error setting \"AuthID\": strconv.ParseInt: parsing \"invalid\": invalid syntax",
@@ -232,14 +232,14 @@ func TestNewClouDNSProvider(t *testing.T) {
 		},
 		{
 			name:          "valid sub-user login type",
-            userIDType:    "sub-auth-id",
+			userIDType:    "sub-auth-id",
 			userID:        "12345",
 			userPassword:  "password",
 			expectedError: "",
 		},
 		{
 			name:             "invalid login type",
-            userIDType:       "invalid",
+			userIDType:       "invalid",
 			userID:           "12345",
 			userPassword:     "password",
 			expectedError:    "CLOUDNS_AUTH_ID_TYPE is not valid. Expected one of 'auth-id' or 'sub-auth-id' but was: 'invalid'",
@@ -309,75 +309,75 @@ func makeConfig() error {
 }
 
 func TestZoneFilter(t *testing.T) {
-    zoneOne := mockZones[0]
-    zoneTwo := mockZones[1]
+	zoneOne := mockZones[0]
+	zoneTwo := mockZones[1]
 
 	tests := []struct {
 		name           string
-        domainFilter   endpoint.DomainFilter
+		domainFilter   endpoint.DomainFilter
 		expectedZones  []cloudns.Zone
 		expectingError bool
 	}{
 		{
 			name:           "all zones",
-		    domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{""}, []string{""}),
-			expectedZones:   []cloudns.Zone{zoneOne, zoneTwo},
+			domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{""}, []string{""}),
+			expectedZones:  []cloudns.Zone{zoneOne, zoneTwo},
 			expectingError: false,
 		},
-        {
+		{
 			name:           "only test1, simple filter",
-		    domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{"test1.com"}, []string{""}),
-			expectedZones:   []cloudns.Zone{zoneOne},
+			domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{"test1.com"}, []string{""}),
+			expectedZones:  []cloudns.Zone{zoneOne},
 			expectingError: false,
 		},
-        {
+		{
 			name:           "only test2, with test1 excluded",
-		    domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{}, []string{"test1.com"}),
-			expectedZones:   []cloudns.Zone{zoneTwo},
+			domainFilter:   endpoint.NewDomainFilterWithExclusions([]string{}, []string{"test1.com"}),
+			expectedZones:  []cloudns.Zone{zoneTwo},
 			expectingError: false,
 		},
 		{
 			name:           "all zones, with regexp",
-            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile("test[12].com"), regexp.MustCompile(``)),
-			expectedZones:   []cloudns.Zone{zoneOne, zoneTwo},
+			domainFilter:   endpoint.NewRegexDomainFilter(regexp.MustCompile("test[12].com"), regexp.MustCompile(``)),
+			expectedZones:  []cloudns.Zone{zoneOne, zoneTwo},
 			expectingError: false,
 		},
-        {
+		{
 			name:           "only test1, with regexp",
-            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile(`test1\..*`), regexp.MustCompile(``)),
-			expectedZones:   []cloudns.Zone{zoneOne},
+			domainFilter:   endpoint.NewRegexDomainFilter(regexp.MustCompile(`test1\..*`), regexp.MustCompile(``)),
+			expectedZones:  []cloudns.Zone{zoneOne},
 			expectingError: false,
 		},
-        {
+		{
 			name:           "only test2, with exclusion regexp",
-            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile(""), regexp.MustCompile(`test1\..*`)),
-			expectedZones:   []cloudns.Zone{zoneTwo},
+			domainFilter:   endpoint.NewRegexDomainFilter(regexp.MustCompile(""), regexp.MustCompile(`test1\..*`)),
+			expectedZones:  []cloudns.Zone{zoneTwo},
 			expectingError: false,
 		},
-        {
+		{
 			name:           "only test2, with two regexp",
-            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile(`.*\.com`), regexp.MustCompile(`test1\..*`)),
-			expectedZones:   []cloudns.Zone{zoneTwo},
+			domainFilter:   endpoint.NewRegexDomainFilter(regexp.MustCompile(`.*\.com`), regexp.MustCompile(`test1\..*`)),
+			expectedZones:  []cloudns.Zone{zoneTwo},
 			expectingError: false,
 		},
-        {
+		{
 			name:           "no zones, with non-matching regexp",
-            domainFilter: endpoint.NewRegexDomainFilter(regexp.MustCompile(`.*\.net`), regexp.MustCompile(``)),
-			expectedZones:   []cloudns.Zone{},
+			domainFilter:   endpoint.NewRegexDomainFilter(regexp.MustCompile(`.*\.net`), regexp.MustCompile(``)),
+			expectedZones:  []cloudns.Zone{},
 			expectingError: false,
 		},
-    }
+	}
 
 	oriListZones := listZones
-    listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
-        return mockZones, nil
-    }
+	listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
+		return mockZones, nil
+	}
 
 	provider := &ClouDNSProvider{}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-            provider.domainFilter = test.domainFilter
+			provider.domainFilter = test.domainFilter
 			zones, err := provider.Zones(context.Background())
 
 			errExist := err != nil

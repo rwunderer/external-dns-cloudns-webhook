@@ -113,6 +113,6 @@ func (c *Configuration) ProviderConfig() (*ClouDNSConfig, error) {
 		DomainFilter: GetDomainFilter(*c),
 		DefaultTTL:   c.DefaultTTL,
 		DryRun:       c.DryRun,
-        Debug:        c.Debug,
+		Debug:        c.Debug,
 	}, nil
 }

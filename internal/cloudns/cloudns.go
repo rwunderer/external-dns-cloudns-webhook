@@ -16,10 +16,10 @@ package cloudns
 import (
 	"context"
 	"fmt"
-    "slices"
+	"slices"
 	"strconv"
 	"strings"
-    "time"
+	"time"
 
 	"external-dns-cloudns-webhook/internal/metrics"
 
@@ -47,7 +47,7 @@ type ClouDNSProvider struct {
 	domainFilter endpoint.DomainFilter
 	defaultTTL   int
 	ownerID      string
-    debug        bool
+	debug        bool
 	dryRun       bool
 	testing      bool
 }
@@ -60,75 +60,75 @@ type ClouDNSConfig struct {
 	ZoneIDFilter provider.ZoneIDFilter
 	DefaultTTL   int
 	OwnerID      string
-    Debug        bool
+	Debug        bool
 	DryRun       bool
 	Testing      bool
 }
 
 var listZones = func(client *cloudns.Client, ctx context.Context) ([]cloudns.Zone, error) {
 	metrics := metrics.GetOpenMetricsInstance()
-    start := time.Now()
+	start := time.Now()
 
-    result, err := client.Zones.List(ctx)
-    if err != nil {
-        metrics.IncFailedApiCallsTotal(actGetZones)
-        return nil, err
-    }
+	result, err := client.Zones.List(ctx)
+	if err != nil {
+		metrics.IncFailedApiCallsTotal(actGetZones)
+		return nil, err
+	}
 
-    delay := time.Since(start)
-    metrics.IncSuccessfulApiCallsTotal(actGetZones)
-    metrics.AddApiDelayHist(actGetZones, delay.Milliseconds())
+	delay := time.Since(start)
+	metrics.IncSuccessfulApiCallsTotal(actGetZones)
+	metrics.AddApiDelayHist(actGetZones, delay.Milliseconds())
 
-    return result, nil
+	return result, nil
 }
 
 var listRecords = func(client *cloudns.Client, ctx context.Context, zoneName string) (cloudns.RecordMap, error) {
 	metrics := metrics.GetOpenMetricsInstance()
-    start := time.Now()
+	start := time.Now()
 
 	result, err := client.Records.List(ctx, zoneName)
-    if err != nil {
-        metrics.IncFailedApiCallsTotal(actGetRecords)
-        return nil, err
-    }
+	if err != nil {
+		metrics.IncFailedApiCallsTotal(actGetRecords)
+		return nil, err
+	}
 
-    delay := time.Since(start)
-    metrics.IncSuccessfulApiCallsTotal(actGetRecords)
-    metrics.AddApiDelayHist(actGetRecords, delay.Milliseconds())
+	delay := time.Since(start)
+	metrics.IncSuccessfulApiCallsTotal(actGetRecords)
+	metrics.AddApiDelayHist(actGetRecords, delay.Milliseconds())
 
-    return result, nil
+	return result, nil
 }
 
 var createRecord = func(client *cloudns.Client, ctx context.Context, zoneName string, record cloudns.Record) error {
 	metrics := metrics.GetOpenMetricsInstance()
-    start := time.Now()
+	start := time.Now()
 
 	_, err := client.Records.Create(ctx, zoneName, record)
-    if err != nil {
-        metrics.IncFailedApiCallsTotal(actCreateRecord)
-        return err
-    }
+	if err != nil {
+		metrics.IncFailedApiCallsTotal(actCreateRecord)
+		return err
+	}
 
-    delay := time.Since(start)
-    metrics.IncSuccessfulApiCallsTotal(actCreateRecord)
-    metrics.AddApiDelayHist(actCreateRecord, delay.Milliseconds())
+	delay := time.Since(start)
+	metrics.IncSuccessfulApiCallsTotal(actCreateRecord)
+	metrics.AddApiDelayHist(actCreateRecord, delay.Milliseconds())
 
 	return nil
 }
 
 var deleteRecord = func(client *cloudns.Client, ctx context.Context, zoneName string, recordID int) error {
 	metrics := metrics.GetOpenMetricsInstance()
-    start := time.Now()
+	start := time.Now()
 
 	_, err := client.Records.Delete(ctx, zoneName, recordID)
-    if err != nil {
-        metrics.IncFailedApiCallsTotal(actDeleteRecord)
-        return err
-    }
+	if err != nil {
+		metrics.IncFailedApiCallsTotal(actDeleteRecord)
+		return err
+	}
 
-    delay := time.Since(start)
-    metrics.IncSuccessfulApiCallsTotal(actDeleteRecord)
-    metrics.AddApiDelayHist(actDeleteRecord, delay.Milliseconds())
+	delay := time.Since(start)
+	metrics.IncSuccessfulApiCallsTotal(actDeleteRecord)
+	metrics.AddApiDelayHist(actDeleteRecord, delay.Milliseconds())
 
 	return nil
 }
@@ -155,9 +155,9 @@ func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
 	provider := &ClouDNSProvider{
 		client:       client,
 		domainFilter: config.DomainFilter,
-        defaultTTL:   config.DefaultTTL,
+		defaultTTL:   config.DefaultTTL,
 		ownerID:      config.OwnerID,
-        debug:        config.Debug,
+		debug:        config.Debug,
 		dryRun:       config.DryRun,
 		testing:      config.Testing,
 	}
@@ -167,7 +167,7 @@ func NewClouDNSProvider(config ClouDNSConfig) (*ClouDNSProvider, error) {
 
 // Zones retrieves the DNS zone from the ClouDNS provider,
 // applies the defined domainFilter and returns the result
-func (p *ClouDNSProvider) Zones (ctx context.Context) ([]cloudns.Zone, error) {
+func (p *ClouDNSProvider) Zones(ctx context.Context) ([]cloudns.Zone, error) {
 	metrics := metrics.GetOpenMetricsInstance()
 	result := []cloudns.Zone{}
 
@@ -297,20 +297,20 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 		dnsParts := strings.Split(ep.DNSName, ".")
 		partLength := len(dnsParts)
 		rootZone := rootZone(ep.DNSName)
-        log.Debugf("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
+		log.Debugf("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
 
-	    zones, err := p.Zones(ctx)
-        if err != nil {
-            return err
-        }
+		zones, err := p.Zones(ctx)
+		if err != nil {
+			return err
+		}
 
-        idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
-            return z.Name == rootZone
-        })
-        if idx < 0 {
-            log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
-            continue
-        }
+		idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
+			return z.Name == rootZone
+		})
+		if idx < 0 {
+			log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
+			continue
+		}
 
 		if ep.RecordType == "TXT" {
 			if !p.dryRun {
@@ -414,18 +414,18 @@ func (p *ClouDNSProvider) deleteRecords(ctx context.Context, endpoints []*endpoi
 			hostName = removeRootZone(ep.DNSName, rootZone)
 		}
 
-	    zones, err := p.Zones(ctx)
-        if err != nil {
-            return err
-        }
+		zones, err := p.Zones(ctx)
+		if err != nil {
+			return err
+		}
 
-        idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
-            return z.Name == rootZone
-        })
-        if idx < 0 {
-            log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
-            continue
-        }
+		idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
+			return z.Name == rootZone
+		})
+		if idx < 0 {
+			log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
+			continue
+		}
 
 		for _, target := range ep.Targets {
 
@@ -517,7 +517,7 @@ func (p *ClouDNSProvider) recordFromTarget(ctx context.Context, ep *endpoint.End
 func (p *ClouDNSProvider) zoneRecordMap(ctx context.Context) (map[string]cloudns.RecordMap, error) {
 	zoneRecordMap := make(map[string]cloudns.RecordMap)
 
-    zones, err := p.Zones(ctx)
+	zones, err := p.Zones(ctx)
 	if err != nil {
 		return nil, err
 	}
