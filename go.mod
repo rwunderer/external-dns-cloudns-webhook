@@ -7,7 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/codingconcepts/env v0.0.0-20240618133406-5b0845441187
 	github.com/golang/mock v1.6.0
-	github.com/golangci/golangci-lint v1.64.0
+	github.com/golangci/golangci-lint v1.64.2
 	github.com/google/go-licenses v1.6.0
 	github.com/ppmathis/cloudns-go v1.0.1
 	github.com/sirupsen/logrus v1.9.3
@@ -236,7 +236,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	honnef.co/go/tools v0.5.1 // indirect
+	honnef.co/go/tools v0.6.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	mvdan.cc/gofumpt v0.7.0 // indirect
 	mvdan.cc/unparam v0.0.0-20240528143540-8a5130ca722f // indirect
