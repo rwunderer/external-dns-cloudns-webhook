@@ -4,34 +4,7 @@
     "github>rwunderer/renovate",
     "github>rwunderer/renovate:container-tools",
     "github>rwunderer/renovate:cosign-version",
+    "github>rwunderer/renovate:go-lang",
     "customManagers:dockerfileVersions"
-  ],
-  "packageRules": [
-    {
-      "matchManagers": [
-        "gomod"
-      ],
-      "groupName": "go-modules",
-      "postUpdateOptions": [
-        "gomodUpdateImportPaths",
-        "gomodTidy"
-      ],
-      "automerge": true,
-      "automergeType": "pr",
-      "addLabels": [
-        "renovate_publish"
-      ]
-    },
-    {
-      "matchDepNames": [
-        "golang"
-      ],
-      "groupName": "go-modules",
-      "automerge": true,
-      "automergeType": "pr",
-      "addLabels": [
-        "renovate_publish"
-      ]
-    }
   ]
 }
