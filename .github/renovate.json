@@ -6,5 +6,8 @@
     "github>rwunderer/renovate:cosign-version",
     "github>rwunderer/renovate:go-lang",
     "customManagers:dockerfileVersions"
-  ]
+  ],
+
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore"
 }
