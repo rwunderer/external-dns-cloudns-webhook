@@ -1,5 +1,5 @@
 [tool.bumpversion]
-current_version = "0.3.9-rc0"
+current_version = "0.3.10-rc0"
 commit = true
 message = "chore: bump version: {current_version} → {new_version}"
 commit_args = "--cleanup=verbatim"
