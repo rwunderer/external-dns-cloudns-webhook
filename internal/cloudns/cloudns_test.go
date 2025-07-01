@@ -314,7 +314,7 @@ func TestZoneFilter(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		domainFilter   endpoint.DomainFilter
+		domainFilter   *endpoint.DomainFilter
 		expectedZones  []cloudns.Zone
 		expectingError bool
 	}{
