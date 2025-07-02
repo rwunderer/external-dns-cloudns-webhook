@@ -31,7 +31,7 @@ func Test_GetDomainFilter(t *testing.T) {
 	type testCase struct {
 		name     string
 		config   Configuration
-		expected endpoint.DomainFilter
+		expected *endpoint.DomainFilter
 	}
 
 	run := func(t *testing.T, tc testCase) {
@@ -45,7 +45,7 @@ func Test_GetDomainFilter(t *testing.T) {
 		{
 			name:     "No domain filters",
 			config:   Configuration{},
-			expected: endpoint.DomainFilter{},
+			expected: &endpoint.DomainFilter{},
 		},
 		{
 			name: "Simple domain filter",

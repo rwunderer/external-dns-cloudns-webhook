@@ -44,7 +44,7 @@ const (
 type ClouDNSProvider struct {
 	provider.BaseProvider
 	client       *cloudns.Client
-	domainFilter endpoint.DomainFilter
+	domainFilter *endpoint.DomainFilter
 	defaultTTL   int
 	ownerID      string
 	debug        bool
@@ -56,7 +56,7 @@ type ClouDNSProvider struct {
 // It includes fields for the context, domain and zone ID filters, owner ID, and flags for dry-run and testing modes.
 type ClouDNSConfig struct {
 	Auth         cloudns.Option
-	DomainFilter endpoint.DomainFilter
+	DomainFilter *endpoint.DomainFilter
 	ZoneIDFilter provider.ZoneIDFilter
 	DefaultTTL   int
 	OwnerID      string
