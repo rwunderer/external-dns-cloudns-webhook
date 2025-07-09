@@ -25,7 +25,7 @@ jobs:
     - name: Run Unit Tests
       run: make unit-test
     - name: Test Report
-      uses: dorny/test-reporter@890a17cecf52a379fc869ab770a71657660be727 # v2
+      uses: dorny/test-reporter@dc3a92680fcc15842eef52e8c4606ea7ce6bd3f3 # v2
       if: success() || failure()
       with:
         name: Unit Test Results
