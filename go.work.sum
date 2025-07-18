@@ -295,6 +295,7 @@ github.com/golang/glog v1.2.1/go.mod h1:6AhwSGph0fcJtXVM/PEHPqZlFeoLxhs7/t5UDAwm
 github.com/golang/protobuf v1.1.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
 github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
+github.com/golangci/golangci-lint/v2 v2.2.2/go.mod h1:F0BBgvaCGCAfnrlRQ729JSLrAJT172WwOpaQrbluz8E=
 github.com/golangci/modinfo v0.3.3/go.mod h1:wytF1M5xl9u0ij8YSvhkEVPP3M5Mc7XLl1pxH3B2aUM=
 github.com/google/certificate-transparency-go v1.0.21/go.mod h1:QeJfpSbVSfYc7RgB3gJFj9cbuQMMchQxrWXz8Ruopmg=
 github.com/google/certificate-transparency-go v1.1.1/go.mod h1:FDKqPvSXawb2ecErVRrD+nfy23RCzyl7eqVCEmlT1Zs=
