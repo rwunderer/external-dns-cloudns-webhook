@@ -90,11 +90,12 @@ func GetDomainFilter(config Configuration) *endpoint.DomainFilter {
 func GetAuth(config Configuration) (cloudns.Option, error) {
 	var auth cloudns.Option
 
-	if config.AuthIDType == "auth-id" {
+	switch config.AuthIDType {
+	case "auth-id":
 		auth = cloudns.AuthUserID(config.AuthID, config.AuthPassword)
-	} else if config.AuthIDType == "sub-auth-id" {
+	case "sub-auth-id":
 		auth = cloudns.AuthSubUserID(config.AuthID, config.AuthPassword)
-	} else {
+	default:
 		return nil, fmt.Errorf("CLOUDNS_AUTH_ID_TYPE is not valid. Expected one of 'auth-id' or 'sub-auth-id' but was: '%s'", config.AuthIDType)
 	}
 

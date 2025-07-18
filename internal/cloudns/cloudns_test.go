@@ -10,6 +10,7 @@ import (
 
 	"github.com/codingconcepts/env"
 	cloudns "github.com/ppmathis/cloudns-go"
+	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/external-dns/endpoint"
 )
@@ -260,19 +261,31 @@ func TestNewClouDNSProvider(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.userID != "" {
-				os.Setenv("CLOUDNS_AUTH_ID", test.userID)
+				if err := os.Setenv("CLOUDNS_AUTH_ID", test.userID); err != nil {
+					log.Fatalf("Couldn't set CLOUDNS_AUTH_ID: %v", err)
+				}
 			} else {
-				os.Unsetenv("CLOUDNS_AUTH_ID")
+				if err := os.Unsetenv("CLOUDNS_AUTH_ID"); err != nil {
+					log.Fatalf("Couldn't unset CLOUDNS_AUTH_ID: %v", err)
+				}
 			}
 			if test.userIDType != "" {
-				os.Setenv("CLOUDNS_AUTH_ID_TYPE", test.userIDType)
+				if err := os.Setenv("CLOUDNS_AUTH_ID_TYPE", test.userIDType); err != nil {
+					log.Fatalf("Couldn't set CLOUDNS_AUTH_ID_TYPE: %v", err)
+				}
 			} else {
-				os.Unsetenv("CLOUDNS_AUTH_ID_TYPE")
+				if err := os.Unsetenv("CLOUDNS_AUTH_ID_TYPE"); err != nil {
+					log.Fatalf("Couldn't unset CLOUDNS_AUTH_ID_TYPE: %v", err)
+				}
 			}
 			if test.userPassword != "" {
-				os.Setenv("CLOUDNS_AUTH_PASSWORD", test.userPassword)
+				if err := os.Setenv("CLOUDNS_AUTH_PASSWORD", test.userPassword); err != nil {
+					log.Fatalf("Couldn't set CLOUDNS_AUTH_PASSWORD: %v", err)
+				}
 			} else {
-				os.Unsetenv("CLOUDNS_AUTH_PASSWORD")
+				if err := os.Unsetenv("CLOUDNS_AUTH_PASSWORD"); err != nil {
+					log.Fatalf("Couldn't unset CLOUDNS_AUTH_PASSWORD: %v", err)
+				}
 			}
 
 			err := makeConfig()

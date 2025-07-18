@@ -350,11 +350,11 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 			ep.RecordTTL = endpoint.TTL(p.defaultTTL)
 		}
 
-		if !isValidTTL(strconv.Itoa(int(ep.RecordTTL))) && !(ep.RecordType == "TXT") {
+		if !isValidTTL(strconv.Itoa(int(ep.RecordTTL))) && !(ep.RecordType == "TXT") { //nolint:staticcheck
 			return fmt.Errorf("invalid TTL %s (still) for %s - must be one of '60', '300', '900', '1800', '3600', '21600', '43200', '86400', '172800', '259200', '604800', '1209600', '2592000'", fmt.Sprint(ep.RecordTTL), ep.DNSName)
 		}
 
-		if partLength == 2 && !(ep.RecordType == "TXT") {
+		if partLength == 2 && !(ep.RecordType == "TXT") { //nolint:staticcheck
 			for _, target := range ep.Targets {
 				if !p.dryRun {
 					err := createRecord(p.client, ctx, ep.DNSName, cloudns.Record{
@@ -372,7 +372,7 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 					log.Infof("DRY RUN: CREATE %s %s %s %s", ep.DNSName, ep.RecordType, target, fmt.Sprint(ep.RecordTTL))
 				}
 			}
-		} else if partLength > 2 && !(ep.RecordType == "TXT") {
+		} else if partLength > 2 && !(ep.RecordType == "TXT") { //nolint:staticcheck
 
 			hostName := removeLastOccurrance(ep.DNSName, "."+rootZone)
 
