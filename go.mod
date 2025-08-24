@@ -2,16 +2,16 @@ module external-dns-cloudns-webhook
 
 go 1.24.2
 
-toolchain go1.24.5
+toolchain go1.25.0
 
 require (
 	github.com/codingconcepts/env v0.0.0-20240618133406-5b0845441187
 	github.com/golang/mock v1.6.0
-	github.com/golangci/golangci-lint/v2 v2.3.0
+	github.com/golangci/golangci-lint/v2 v2.4.0
 	github.com/google/go-licenses v1.6.0
 	github.com/ppmathis/cloudns-go v1.0.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	gotest.tools/gotestsum v1.12.3
 )
 
