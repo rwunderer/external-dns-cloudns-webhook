@@ -44,7 +44,7 @@ vet: ## Run go vet against code.
 .PHONY: lint
 lint: ## Run golangci-lint against code.
 	mkdir -p build/reports
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint run --timeout 2m
+	golangci-lint run --timeout 2m
 
 .PHONY: static-analysis
 static-analysis: lint vet ## Run static analysis against code.
