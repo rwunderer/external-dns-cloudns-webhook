@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${TARGETVARIANT#"v
 #--------
 FROM cgr.dev/chainguard/static@sha256:b00a88ca2a8136cdbd86a8aa834c3f69c17debb295a38055f7babfc2c9f9a02b AS external-dns-cloudns-webhook
 
-LABEL version=0.3.29-rc0
+LABEL version=0.3.30-rc0
 
 USER 20000:20000
 
