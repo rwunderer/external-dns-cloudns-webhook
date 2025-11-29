@@ -3,6 +3,7 @@ package cloudns
 import (
 	"testing"
 
+	cloudns "github.com/ppmathis/cloudns-go"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
@@ -241,6 +242,173 @@ func TestRemoveLastOccurrance(t *testing.T) {
 			actual := removeLastOccurrance(test.str, test.subStr)
 			if actual != test.expected {
 				t.Errorf("got %q, want %q", actual, test.expected)
+			}
+		})
+	}
+}
+
+// TestFindZoneForDomain tests the findZoneForDomain function.
+// It verifies that the function correctly finds the longest matching zone suffix
+// from the list of available zones, properly handling subdomain zones.
+func TestFindZoneForDomain(t *testing.T) {
+	zones := []cloudns.Zone{
+		{Name: "example.com"},
+		{Name: "k8s.example.com"},
+		{Name: "staging.k8s.example.com"},
+		{Name: "glide.sk"},
+		{Name: "k8s.glide.sk"},
+		{Name: "i.glide.sk"},
+		{Name: "vagrantfile.app"},
+	}
+
+	tests := []struct {
+		name     string
+		domain   string
+		expected string
+	}{
+		// Standard TLD zones
+		{
+			name:     "standard zone - with subdomain",
+			domain:   "dashboard.example.com",
+			expected: "example.com",
+		},
+		{
+			name:     "standard zone - another subdomain",
+			domain:   "api.example.com",
+			expected: "example.com",
+		},
+		{
+			name:     "standard zone - apex record",
+			domain:   "example.com",
+			expected: "example.com",
+		},
+		// Subdomain zones - should match longest suffix
+		{
+			name:     "subdomain zone - k8s.example.com",
+			domain:   "dashboard.k8s.example.com",
+			expected: "k8s.example.com",
+		},
+		{
+			name:     "subdomain zone - app in k8s",
+			domain:   "app.k8s.example.com",
+			expected: "k8s.example.com",
+		},
+		{
+			name:     "subdomain zone - apex of k8s.example.com",
+			domain:   "k8s.example.com",
+			expected: "k8s.example.com",
+		},
+		// Deeper subdomain zones
+		{
+			name:     "deeper subdomain zone",
+			domain:   "myapp.staging.k8s.example.com",
+			expected: "staging.k8s.example.com",
+		},
+		{
+			name:     "deeper subdomain zone - apex",
+			domain:   "staging.k8s.example.com",
+			expected: "staging.k8s.example.com",
+		},
+		// Real-world cases from issue
+		{
+			name:     "issue case - dashboard.k8s.glide.sk",
+			domain:   "dashboard.k8s.glide.sk",
+			expected: "k8s.glide.sk",
+		},
+		{
+			name:     "issue case - vgf.k8s.glide.sk",
+			domain:   "vgf.k8s.glide.sk",
+			expected: "k8s.glide.sk",
+		},
+		{
+			name:     "issue case - whoami.i.glide.sk",
+			domain:   "whoami.i.glide.sk",
+			expected: "i.glide.sk",
+		},
+		{
+			name:     "issue case - traefik.i.glide.sk",
+			domain:   "traefik.i.glide.sk",
+			expected: "i.glide.sk",
+		},
+		{
+			name:     "issue case - app.vagrantfile.app",
+			domain:   "app.vagrantfile.app",
+			expected: "vagrantfile.app",
+		},
+		// No match cases
+		{
+			name:     "no match - unknown.com",
+			domain:   "dashboard.unknown.com",
+			expected: "",
+		},
+		{
+			name:     "no match - random.domain.org",
+			domain:   "random.domain.org",
+			expected: "",
+		},
+		// Edge cases
+		{
+			name:     "empty domain",
+			domain:   "",
+			expected: "",
+		},
+		{
+			name:     "single part domain",
+			domain:   "localhost",
+			expected: "",
+		},
+		// Ensure parent zone doesn't match when subdomain zone exists
+		{
+			name:     "should not match parent zone glide.sk for k8s subdomain",
+			domain:   "test.k8s.glide.sk",
+			expected: "k8s.glide.sk",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := findZoneForDomain(tt.domain, zones)
+			if result != tt.expected {
+				t.Errorf("findZoneForDomain(%q) = %q, want %q",
+					tt.domain, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestFindZoneForDomainEmptyZones tests findZoneForDomain with an empty zones list.
+func TestFindZoneForDomainEmptyZones(t *testing.T) {
+	zones := []cloudns.Zone{}
+
+	result := findZoneForDomain("dashboard.example.com", zones)
+	if result != "" {
+		t.Errorf("findZoneForDomain with empty zones = %q, want empty string", result)
+	}
+}
+
+// TestFindZoneForDomainSingleZone tests findZoneForDomain with a single zone.
+func TestFindZoneForDomainSingleZone(t *testing.T) {
+	zones := []cloudns.Zone{
+		{Name: "k8s.example.com"},
+	}
+
+	tests := []struct {
+		domain   string
+		expected string
+	}{
+		{"dashboard.k8s.example.com", "k8s.example.com"},
+		{"k8s.example.com", "k8s.example.com"},
+		{"example.com", ""},           // parent zone not in list
+		{"other.example.com", ""},     // different subdomain
+		{"deep.dashboard.k8s.example.com", "k8s.example.com"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.domain, func(t *testing.T) {
+			result := findZoneForDomain(tt.domain, zones)
+			if result != tt.expected {
+				t.Errorf("findZoneForDomain(%q) = %q, want %q",
+					tt.domain, result, tt.expected)
 			}
 		})
 	}
