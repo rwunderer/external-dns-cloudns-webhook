@@ -16,7 +16,6 @@ package cloudns
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -296,26 +295,23 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 
 		dnsParts := strings.Split(ep.DNSName, ".")
 		partLength := len(dnsParts)
-		rootZone := rootZone(ep.DNSName)
-		log.Debugf("Analyzed %s: len=%d, rootZone=%s", ep.DNSName, partLength, rootZone)
 
 		zones, err := p.Zones(ctx)
 		if err != nil {
 			return err
 		}
 
-		idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
-			return z.Name == rootZone
-		})
-		if idx < 0 {
-			log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
+		matchedZone := findZoneForDomain(ep.DNSName, zones)
+		if matchedZone == "" {
+			log.Warnf("Skipping %s - no matching zone found", ep.DNSName)
 			continue
 		}
+		log.Debugf("Matched %s to zone %s (len=%d)", ep.DNSName, matchedZone, partLength)
 
 		if ep.RecordType == "TXT" {
 			if !p.dryRun {
 				if partLength == 2 && dnsParts[0][0:2] == "a-" {
-					err := createRecord(p.client, ctx, rootZone[2:], cloudns.Record{
+					err := createRecord(p.client, ctx, matchedZone[2:], cloudns.Record{
 						Host:       "adash",
 						Record:     ep.Targets[0],
 						RecordType: cloudns.RecordType("TXT"),
@@ -325,12 +321,12 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 						return err
 					}
 				} else {
-					hostName := removeLastOccurrance(ep.DNSName, "."+rootZone)
-					if hostName == rootZone {
+					hostName := removeLastOccurrance(ep.DNSName, "."+matchedZone)
+					if hostName == matchedZone {
 						hostName = ""
 					}
 
-					err := createRecord(p.client, ctx, rootZone, cloudns.Record{
+					err := createRecord(p.client, ctx, matchedZone, cloudns.Record{
 						Host:       hostName,
 						Record:     ep.Targets[0],
 						RecordType: cloudns.RecordType("TXT"),
@@ -354,10 +350,14 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 			return fmt.Errorf("invalid TTL %s (still) for %s - must be one of '60', '300', '900', '1800', '3600', '21600', '43200', '86400', '172800', '259200', '604800', '1209600', '2592000'", fmt.Sprint(ep.RecordTTL), ep.DNSName)
 		}
 
-		if partLength == 2 && !(ep.RecordType == "TXT") { //nolint:staticcheck
+		// Calculate the number of zone parts to determine if this is a zone apex record
+		zoneParts := len(strings.Split(matchedZone, "."))
+		isZoneApex := partLength == zoneParts
+
+		if isZoneApex && !(ep.RecordType == "TXT") { //nolint:staticcheck
 			for _, target := range ep.Targets {
 				if !p.dryRun {
-					err := createRecord(p.client, ctx, ep.DNSName, cloudns.Record{
+					err := createRecord(p.client, ctx, matchedZone, cloudns.Record{
 						Host:       "",
 						Record:     target,
 						RecordType: cloudns.RecordType(ep.RecordType),
@@ -372,13 +372,13 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 					log.Infof("DRY RUN: CREATE %s %s %s %s", ep.DNSName, ep.RecordType, target, fmt.Sprint(ep.RecordTTL))
 				}
 			}
-		} else if partLength > 2 && !(ep.RecordType == "TXT") { //nolint:staticcheck
+		} else if !isZoneApex && !(ep.RecordType == "TXT") { //nolint:staticcheck
 
-			hostName := removeLastOccurrance(ep.DNSName, "."+rootZone)
+			hostName := removeLastOccurrance(ep.DNSName, "."+matchedZone)
 
 			for _, target := range ep.Targets {
 				if !p.dryRun {
-					err := createRecord(p.client, ctx, rootZone, cloudns.Record{
+					err := createRecord(p.client, ctx, matchedZone, cloudns.Record{
 						Host:       hostName,
 						Record:     target,
 						RecordType: cloudns.RecordType(ep.RecordType),
@@ -404,32 +404,29 @@ func (p *ClouDNSProvider) createRecords(ctx context.Context, endpoints []*endpoi
 // If an error occurs while deleting the records, it is returned.
 func (p *ClouDNSProvider) deleteRecords(ctx context.Context, endpoints []*endpoint.Endpoint) error {
 	for _, ep := range endpoints {
-		rootZone := rootZone(ep.DNSName)
-		hostName := ""
-
-		if rootZone[0:2] == "a-" && ep.RecordType == "TXT" {
-			rootZone = rootZone[2:]
-			hostName = "adash"
-		} else {
-			hostName = removeRootZone(ep.DNSName, rootZone)
-		}
-
 		zones, err := p.Zones(ctx)
 		if err != nil {
 			return err
 		}
 
-		idx := slices.IndexFunc(zones, func(z cloudns.Zone) bool {
-			return z.Name == rootZone
-		})
-		if idx < 0 {
-			log.Warnf("Skipping %s as %s is not one of our zones", ep.DNSName, rootZone)
+		matchedZone := findZoneForDomain(ep.DNSName, zones)
+		if matchedZone == "" {
+			log.Warnf("Skipping %s - no matching zone found", ep.DNSName)
 			continue
+		}
+		log.Debugf("Matched %s to zone %s for deletion", ep.DNSName, matchedZone)
+
+		hostName := ""
+		if len(matchedZone) >= 2 && matchedZone[0:2] == "a-" && ep.RecordType == "TXT" {
+			matchedZone = matchedZone[2:]
+			hostName = "adash"
+		} else {
+			hostName = removeRootZone(ep.DNSName, matchedZone)
 		}
 
 		for _, target := range ep.Targets {
 
-			id, zone, err := p.recordFromTarget(ctx, ep, target, rootZone, hostName)
+			id, zone, err := p.recordFromTarget(ctx, ep, target, matchedZone, hostName)
 			if err != nil {
 				return err
 			}

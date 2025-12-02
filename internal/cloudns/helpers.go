@@ -2,8 +2,10 @@ package cloudns
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
+	cloudns "github.com/ppmathis/cloudns-go"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
@@ -71,12 +73,44 @@ func isValidTTL(ttl string) bool {
 // For example, the root zone of "test.this.program.com" is "program.com" and
 // the root zone of "easy.com" is "easy.com".
 // If the domain name has less than two parts, the domain name is returned as-is.
+//
+// Deprecated: Use findZoneForDomain instead, which properly handles subdomain zones.
 func rootZone(domain string) string {
 	parts := strings.Split(domain, ".")
 	if len(parts) < 2 {
 		return domain
 	}
 	return strings.Join(parts[len(parts)-2:], ".")
+}
+
+// findZoneForDomain finds the longest matching zone suffix from the list of available zones.
+// This properly handles subdomain zones (e.g., k8s.example.com) by finding the most specific
+// zone that matches the domain.
+//
+// For example, given zones ["example.com", "k8s.example.com"] and domain "dashboard.k8s.example.com",
+// this function returns "k8s.example.com" (the longest matching zone), not "example.com".
+//
+// Returns an empty string if no matching zone is found.
+func findZoneForDomain(domain string, zones []cloudns.Zone) string {
+	// Build list of zone names sorted by length (longest first)
+	zoneNames := make([]string, len(zones))
+	for i, z := range zones {
+		zoneNames[i] = z.Name
+	}
+	sort.Slice(zoneNames, func(i, j int) bool {
+		return len(zoneNames[i]) > len(zoneNames[j])
+	})
+
+	// Find the longest matching zone suffix
+	for _, zoneName := range zoneNames {
+		if domain == zoneName {
+			return zoneName
+		}
+		if strings.HasSuffix(domain, "."+zoneName) {
+			return zoneName
+		}
+	}
+	return ""
 }
 
 // Returns the domain name with the root zone and any trailing periods removed.
