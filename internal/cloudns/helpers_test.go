@@ -398,8 +398,8 @@ func TestFindZoneForDomainSingleZone(t *testing.T) {
 	}{
 		{"dashboard.k8s.example.com", "k8s.example.com"},
 		{"k8s.example.com", "k8s.example.com"},
-		{"example.com", ""},           // parent zone not in list
-		{"other.example.com", ""},     // different subdomain
+		{"example.com", ""},       // parent zone not in list
+		{"other.example.com", ""}, // different subdomain
 		{"deep.dashboard.k8s.example.com", "k8s.example.com"},
 	}
 
