@@ -26,11 +26,9 @@ image released in the
 [GitHub container registry](https://github.com/rwunderer/external-dns-cloudns-webhook/pkgs/container/external-dns-cloudns-webhook).
 The deployment can be performed in every way Kubernetes supports.
 
-Here are provided examples using the
-[External DNS chart](#using-the-externaldns-chart) and the
-[Bitnami chart](#using-the-bitnami-chart).
+See the example using the [External DNS chart](#using-the-externaldns-chart).
 
-In either case, a secret that stores the CloudDNS auth info is required:
+In any case, a secret that stores the CloudDNS auth info is required:
 
 ```yaml
 kubectl create secret generic cloudns-config -n external-dns \
@@ -112,76 +110,6 @@ And then:
 # install external-dns with helm
 helm install external-dns-cloudns external-dns/external-dns -f external-dns-cloudns-values.yaml --version 0.15.0 -n external-dns
 ```
-
-### Using the Bitnami chart
-
-Skip this step if you already have the Bitnami repository added:
-
-```shell
-helm repo add bitnami https://charts.bitnami.com/bitnami
-```
-
-Update your helm chart repositories:
-
-```shell
-helm repo update
-```
-
-You can then create the helm values file, for example
-`external-dns-cloudns-values.yaml`:
-
-```yaml
-provider: webhook
-policy: sync
-extraArgs:
-  webhook-provider-url: http://localhost:8888
-  txt-prefix: "reg-%{record_type}-"
-
-sidecars:
-  - name: cloudns-webhook
-    image: ghcr.io/rwunderer/external-dns-cloudns-webhook:v0.1.0
-    ports:
-      - containerPort: 8888
-        name: webhook
-      - containerPort: 8080
-        name: http-wh-metrics
-    livenessProbe:
-      httpGet:
-        path: /health
-        port: http-wh-metrics
-      initialDelaySeconds: 10
-      timeoutSeconds: 5
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: http-wh-metrics
-      initialDelaySeconds: 10
-      timeoutSeconds: 5
-    env:
-    - name: CLOUDNS_AUTH_ID_TYPE
-      valueFrom:
-        secretKeyRef:
-          name: cloudns-config
-          key: CLOUDNS_AUTH_ID_TYPE
-    - name: CLOUDNS_AUTH_ID
-      valueFrom:
-        secretKeyRef:
-          name: cloudns-config
-          key: CLOUDNS_AUTH_ID
-    - name: CLOUDNS_AUTH_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: cloudns-config
-          key: CLOUDNS_AUTH_PASSWORD
-```
-
-And then:
-
-```shell
-# install external-dns with helm
-helm install external-dns-cloudns bitnami/external-dns -f external-dns-cloudns-values.yaml -n external-dns
-```
-
 
 ## Environment variables
 
