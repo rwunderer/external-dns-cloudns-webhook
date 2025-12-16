@@ -363,6 +363,33 @@ func TestFindZoneForDomain(t *testing.T) {
 			domain:   "test.k8s.glide.sk",
 			expected: "k8s.glide.sk",
 		},
+		// ExternalDNS registry TXT record prefixes (e.g., reg-a-, reg-aaaa-, reg-cname-)
+		// These are used for heritage tracking at zone apex
+		{
+			name:     "registry prefix - reg-a- at zone apex",
+			domain:   "reg-a-vagrantfile.app",
+			expected: "vagrantfile.app",
+		},
+		{
+			name:     "registry prefix - reg-aaaa- at zone apex",
+			domain:   "reg-aaaa-vagrantfile.app",
+			expected: "vagrantfile.app",
+		},
+		{
+			name:     "registry prefix - reg-cname- at zone apex",
+			domain:   "reg-cname-example.com",
+			expected: "example.com",
+		},
+		{
+			name:     "registry prefix - reg-a- at subdomain zone apex",
+			domain:   "reg-a-k8s.example.com",
+			expected: "k8s.example.com",
+		},
+		{
+			name:     "registry prefix - with subdomain (should use dot suffix)",
+			domain:   "reg-a-test.vagrantfile.app",
+			expected: "vagrantfile.app",
+		},
 	}
 
 	for _, tt := range tests {

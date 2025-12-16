@@ -90,6 +90,9 @@ func rootZone(domain string) string {
 // For example, given zones ["example.com", "k8s.example.com"] and domain "dashboard.k8s.example.com",
 // this function returns "k8s.example.com" (the longest matching zone), not "example.com".
 //
+// It also handles ExternalDNS registry TXT record prefixes (e.g., "reg-a-", "reg-aaaa-", "reg-cname-")
+// where the prefix is prepended to the zone apex. For example, "reg-a-example.com" matches zone "example.com".
+//
 // Returns an empty string if no matching zone is found.
 func findZoneForDomain(domain string, zones []cloudns.Zone) string {
 	// Build list of zone names sorted by length (longest first)
@@ -107,6 +110,11 @@ func findZoneForDomain(domain string, zones []cloudns.Zone) string {
 			return zoneName
 		}
 		if strings.HasSuffix(domain, "."+zoneName) {
+			return zoneName
+		}
+		// Handle ExternalDNS registry TXT record prefixes (e.g., "reg-a-example.com" for zone "example.com")
+		// These prefixes are used for heritage tracking and follow the pattern: prefix + zone
+		if strings.HasSuffix(domain, "-"+zoneName) {
 			return zoneName
 		}
 	}
