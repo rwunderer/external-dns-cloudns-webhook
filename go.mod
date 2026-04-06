@@ -106,5 +106,5 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	sigs.k8s.io/external-dns v0.20.0
+	sigs.k8s.io/external-dns v0.21.0
 )
