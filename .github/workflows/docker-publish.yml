@@ -24,7 +24,7 @@ jobs:
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
 
-    uses: rwunderer/renovate/.github/workflows/reusable-docker-publish.yml@9eb2183ddfa45262543b33ee0f6a768c8bb680c2 # main
+    uses: rwunderer/renovate/.github/workflows/reusable-docker-publish.yml@4648c9ad461b9867b4fb9b58f9efec5aff9794f9 # main
     with:
       target: external-dns-cloudns-webhook
       docker-file: ./Dockerfile
