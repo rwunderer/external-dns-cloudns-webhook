@@ -11,5 +11,5 @@ jobs:
     permissions:
       contents: write
 
-    uses: rwunderer/renovate/.github/workflows/reusable-create-release.yml@84fd4c34ae0c500e35d7de08ee268924afc8c9eb # main
+    uses: rwunderer/renovate/.github/workflows/reusable-create-release.yml@605867cf6ee58c1d8e4380e797b5d6f358fc3a60 # main
     secrets: inherit
